@@ -40,7 +40,7 @@ copy_inds = False
 
 if copy_inds == False:
     all_inds = np.where(tParams_new[f'K{K}trainable']==1)[0]
-    n_trial_hists = 2
+    N_trialhists = 200
     
     if Path(fname).exists():
         existing_df = pd.read_csv(fname)
@@ -49,7 +49,7 @@ if copy_inds == False:
     else:
         avail_inds = all_inds
         
-    inds2test = rng.choice(avail_inds, n_trial_hists, replace=False)
+    inds2test = rng.choice(avail_inds, N_trialhists, replace=False)
 
 else:
     df2copy = pd.read_csv('./PATH_TO_DATAFRAME.csv')
@@ -63,8 +63,8 @@ else:
         avail_inds = inds2copy
         
     inds2test = avail_inds
-    n_trial_hists = avail_inds.shape[0]
-    print(n_trial_hists, ' trials')
+    N_trialhists = avail_inds.shape[0]
+    print(N_trialhists, ' trials')
 
 timepoints = np.arange(70, 121, 5)
 n_rew_hist = 3
@@ -75,13 +75,13 @@ angles = []
 dcovs_sf = []
 dcovs_sl = []
 
-for h in range(n_trial_hists):
+for h in range(N_trialhists):
     
     inds = [inds2test[h]]
     print('trial hist #', h, ', ind ', inds)
     
     # simulate trials
-    N_testbatch = 500
+    N_testbatch = 400
     
     task = Task_SH2(vis_noise=vis_noise, mem_noise=mem_noise, N_batch=N_testbatch, 
                     dat=tParams_new, dat_inds=inds, K=K, fixedDelay=510)
@@ -127,15 +127,15 @@ for h in range(n_trial_hists):
         Xs_sl.append(fr_t.T)
         Xs_sl.append(sl1[:].reshape(1, sl1.shape[0]))
 
-        U_sl, dcovs_sl_[t] = dca(Xs_sl, num_dca_dimensions = 1, 
-                                   percent_increase_criterion = 0.01)
+        U_sl, dcovs_sl_[t] = dca(Xs_sl, num_dca_dimensions=1, 
+                                   percent_increase_criterion=0.01)
         
         Xs_sf = []
         Xs_sf.append(fr_t.T)
         Xs_sf.append(sf1[:].reshape(1, sf1.shape[0]))
 
-        U_sf, dcovs_sf_[t] = dca(Xs_sf, num_dca_dimensions = 1, 
-                                   percent_increase_criterion = 0.01)
+        U_sf, dcovs_sf_[t] = dca(Xs_sf, num_dca_dimensions=1, 
+                                   percent_increase_criterion=0.01)
         
         u1, u2 = np.squeeze(U_sl[0]), np.squeeze(U_sf[0])
         angles_[t] = np.degrees(np.arccos(np.dot(u1, u2) / 
@@ -161,7 +161,7 @@ else:
 #%%
 
 for i in range(df.shape[0]):
-    plt.plot(df.loc[i, 'angles'])
+    plt.plot(df.loc[i, 'angles'], c='k', alpha=0.5)
 
 
 

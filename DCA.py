@@ -17,7 +17,7 @@ import sys
 def dca(Xs, Ds = [], num_iters_per_dataset = 1, num_iters_foreach_dim = 30, 
         percent_increase_criterion = 0.01, num_dca_dimensions = [], 
         num_stoch_batch_samples = 0, num_samples_to_compute_stepwise_dcov = 1000,
-        u_0s = [], print_progress=True):
+        u_0s = []):
 #  U, dcovs = dca(Xs, ...)
 #
 #  DESCRIPTION:
@@ -98,8 +98,7 @@ def dca(Xs, Ds = [], num_iters_per_dataset = 1, num_iters_foreach_dim = 30,
     ### optimization
         for idim in range(num_dca_dimensions):
             
-            if print_progress:
-                print("dca dimension {}".format(idim+1));
+            print("dca dimension {}".format(idim+1));
 
             u, momented_gradf, R, total_dcov, total_dcov_old, stoch_learning_rate, results = initialization(Xs, u_0s, results);  
                     # compute re-centered distance matrices based on u and update stoch grad parameters
@@ -111,18 +110,20 @@ def dca(Xs, Ds = [], num_iters_per_dataset = 1, num_iters_foreach_dim = 30,
                 # if dcov does not increase by a certain percentage
                 # or if we reached the number of iterations, stop
                 
-                if print_progress:
-                    print("   step {}: dcov = {}".format(itotal_dcov, total_dcov));
+                print("   step {}: dcov = {}".format(itotal_dcov, total_dcov));
 
                 r = np.random.permutation(num_datasets);  # randomize the order of datasets being optimized
 
                 if (num_stoch_batch_samples == 0):
                     ### Projected gradient descent, uses all samples
-
+                    
                     sys.stdout.write('        sets:');
+                        
                     for iset in range(0,num_datasets):
+                        
                         s = " {} ".format(r[iset]+1);
                         sys.stdout.write(s);
+                            
                         Rtemp = R[:];
                         del Rtemp[r[iset]];
                         R_combined = get_recentered_combined(Rtemp, R_given); # get combined recentered distance matrix (summed)
@@ -142,11 +143,10 @@ def dca(Xs, Ds = [], num_iters_per_dataset = 1, num_iters_foreach_dim = 30,
                     random_sample_indices = np.random.permutation(num_samples);
                     batch_indices = range(0,num_samples, num_stoch_batch_samples);
                     
-                    if print_progress:
-                        print("     batches:");
+                    print("     batches:");
 
                     for ibatch in range(0,len(batch_indices)-1):  # ignore last set of samples since randomized
-
+                    
                         sys.stdout.write('.');
 
                         window = np.arange(batch_indices[ibatch], batch_indices[ibatch+1]);
@@ -178,8 +178,7 @@ def dca(Xs, Ds = [], num_iters_per_dataset = 1, num_iters_foreach_dim = 30,
 
                 itotal_dcov = itotal_dcov + 1;
                 
-                if print_progress:
-                    print("");
+                print("");
             sys.stdout.write('\n');
             dcovs[idim] = total_dcov;
 
