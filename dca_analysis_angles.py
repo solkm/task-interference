@@ -13,37 +13,32 @@ sys.path.append('/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject')
 from self_history import Task_SH2
 from psychrnn.backend.simulation import BasicSimulator
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
 import pandas as pd
 rng = np.random.default_rng()
 from sklearn.decomposition import PCA
 from DCA import dca
 from pathlib import Path
-from scipy.stats import ttest_ind, ttest_rel, ranksums
 
 #%% PCA --> DCA
 
-vis_noise, mem_noise, rec_noise = 0.8, 0.5, 0.1
+vis_noise, mem_noise, rec_noise = 0.1, 0.5, 0.1
 N_rec = 200
 K = 10
-name = 'MM1_monkeyB1245'
-folder = 'monkey_choice_model'
+name = 'MM1_monkeyB1245' # 'SH2_correctA' # 
+folder = 'monkey_choice_model' # 'correct_choice_model' # 
 tParams_new = pd.read_csv('./data_inds/tParams_new.csv')
 weights_path = f'./{folder}/weights/{name}.npz'
 
-n_pca_comp = 10
-
-# choose indices
-fname = f'./{folder}/{name}_dca_df.csv'
-copy_inds = False
+# choose indices (test each trial history condition once per model)
+fname = f'./{folder}/{name}_DCAdf.pkl'
+copy_inds = True# False #
 
 if copy_inds == False:
     all_inds = np.where(tParams_new[f'K{K}trainable']==1)[0]
-    N_trialhists = 200
+    N_trialhists = 500
     
     if Path(fname).exists():
-        existing_df = pd.read_csv(fname)
+        existing_df = pd.read_pickle(fname)
         tested_already = np.array(existing_df['ind'])
         avail_inds = np.delete(all_inds, np.in1d(all_inds, tested_already))
     else:
@@ -52,11 +47,11 @@ if copy_inds == False:
     inds2test = rng.choice(avail_inds, N_trialhists, replace=False)
 
 else:
-    df2copy = pd.read_csv('./PATH_TO_DATAFRAME.csv')
+    df2copy = pd.read_pickle('./correct_choice_model/SH2_correctA_DCAdf.pkl') # pd.read_pickle('./monkey_choice_model/MM1_monkeyB1245_DCAdf.pkl') #   
     inds2copy = np.array(df2copy['ind'])
     
     if Path(fname).exists():
-        existing_df = pd.read_csv(fname)
+        existing_df = pd.read_pickle(fname)
         tested_already = np.array(existing_df['ind'])
         avail_inds = np.delete(inds2copy, np.in1d(inds2copy, tested_already))
     else:
@@ -66,14 +61,15 @@ else:
     N_trialhists = avail_inds.shape[0]
     print(N_trialhists, ' trials')
 
-timepoints = np.arange(70, 121, 5)
+timepoints = np.arange(70, 121, 10)
+n_pca_comp = 10
 n_rew_hist = 3
 task_outputs = []
-reward_history = []
-pca_exp_var = []
+reward_hist = []
+pca_expvar = []
 angles = []
-dcovs_sf = []
-dcovs_sl = []
+dcovs_sl, dcovs_sf = [], []
+ax_sl, ax_sf = [], []
 
 for h in range(N_trialhists):
     
@@ -81,7 +77,7 @@ for h in range(N_trialhists):
     print('trial hist #', h, ', ind ', inds)
     
     # simulate trials
-    N_testbatch = 400
+    N_testbatch = 500
     
     task = Task_SH2(vis_noise=vis_noise, mem_noise=mem_noise, N_batch=N_testbatch, 
                     dat=tParams_new, dat_inds=inds, K=K, fixedDelay=510)
@@ -103,19 +99,21 @@ for h in range(N_trialhists):
     fr_tpts = np.maximum(state_var[:, timepoints, 100:], 0)
     
     task_outputs.append(np.mean(model_output[:, -1, :2], axis=0))
-    reward_history.append(np.round(np.mean(np.mean(test_inputs, axis=0), axis=0)
+    reward_hist.append(np.round(np.mean(np.mean(test_inputs, axis=0), axis=0)
                          [np.arange(5, (K-1)*6, 6)])[-n_rew_hist:])
     
     # PCA
     pca = PCA(n_components=n_pca_comp)
     pca.fit_transform(np.reshape(fr_tpts, (fr_tpts.shape[0]*fr_tpts.shape[1], 
                                            fr_tpts.shape[2])))
-    pca_exp_var.append(np.sum(pca.explained_variance_ratio_))
+    pca_expvar.append(np.sum(pca.explained_variance_ratio_))
     
     # DCA
     angles_ = np.zeros(timepoints.shape[0])
     dcovs_sl_ = np.zeros(timepoints.shape[0])
+    ax_sl_ = np.zeros((timepoints.shape[0], n_pca_comp))
     dcovs_sf_ = np.zeros(timepoints.shape[0])
+    ax_sf_ = np.zeros((timepoints.shape[0], n_pca_comp))
     
     for t in range(timepoints.shape[0]):
         
@@ -126,45 +124,37 @@ for h in range(N_trialhists):
         Xs_sl = []
         Xs_sl.append(fr_t.T)
         Xs_sl.append(sl1[:].reshape(1, sl1.shape[0]))
-
         U_sl, dcovs_sl_[t] = dca(Xs_sl, num_dca_dimensions=1, 
                                    percent_increase_criterion=0.01)
+        ax_sl_[t] =  U_sl[1][0][0] * np.squeeze(U_sl[0])
         
         Xs_sf = []
         Xs_sf.append(fr_t.T)
         Xs_sf.append(sf1[:].reshape(1, sf1.shape[0]))
-
         U_sf, dcovs_sf_[t] = dca(Xs_sf, num_dca_dimensions=1, 
                                    percent_increase_criterion=0.01)
+        ax_sf_[t] = U_sf[1][0][0] * np.squeeze(U_sf[0])
         
-        u1, u2 = np.squeeze(U_sl[0]), np.squeeze(U_sf[0])
-        angles_[t] = np.degrees(np.arccos(np.dot(u1, u2) / 
-                                    (np.linalg.norm(u1)*np.linalg.norm(u2))))
-    
+        angles_[t] = np.degrees(np.arccos(np.dot(ax_sl_[t], ax_sf_[t])))
+        
     angles.append(angles_)
     dcovs_sl.append(dcovs_sl_)
+    ax_sl.append(ax_sl_)
     dcovs_sf.append(dcovs_sf_)
+    ax_sf.append(ax_sf_)
     
-    
-df = pd.DataFrame(data={'ind':inds2test, 'angles':angles, 'dcovs_sl':dcovs_sl,
-                        'dcovs_sf':dcovs_sf, 'task_outputs':task_outputs,
-                        'reward_history':reward_history, 
-                        'pca_exp_var':pca_exp_var})
+df = pd.DataFrame(data={'ind':inds2test, 'angles':angles, 
+                        'dcovs_sl':dcovs_sl, 'dcovs_sf':dcovs_sf, 
+                        'ax_sl':ax_sl, 'ax_sf':ax_sf, 
+                        'task_outputs':task_outputs, 
+                        'reward_history':reward_hist, 
+                        'pca_expvar':pca_expvar, 
+                        })
 
 # save new dataframe
 if Path(fname).exists()==False:
-    df.to_csv(fname, index=False)
+    df.to_pickle(fname)
 else:
     df_combined = pd.concat([existing_df, df])
-    df_combined.to_csv(fname, index=False)
-
-#%%
-
-for i in range(df.shape[0]):
-    plt.plot(df.loc[i, 'angles'], c='k', alpha=0.5)
-
-
-
-
-
-
+    df_combined = df_combined.reset_index(drop=True)
+    df_combined.to_pickle(fname)

@@ -18,9 +18,6 @@ from abc import ABCMeta
 ABC = ABCMeta('ABC', (object,), {})
 from time import time
 from os import makedirs, path
-import pandas as pd
-
-tParams_df = pd.read_csv('/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject/tParams_df.csv')
 
 class RNN_SH2(Basic):
     def train(self, task, train_params):
@@ -399,8 +396,9 @@ class Task_SH2(Task):
         return params
     
     def selftest_batch_generator(self):
-        """ Generates test trials using MODEL (fully trained) trial history. Initializes with monkey history K-1 trials back, and then computes model choice history up to the current trial.
-            Runs slowly, only use for small numbers of trials. Otherwise see the sequential version.
+        """ Generates test trials using MODEL (fully trained) trial history. 
+        Initializes with monkey history K-1 trials back, and then computes model choice history up to the current trial.
+        Runs slowly, only use for small numbers of trials. Otherwise see the sequential version.
         """
         
         x_data = []
