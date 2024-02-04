@@ -5,8 +5,9 @@ Created on Tue Jun 13 16:14:08 2023
 
 @author: Sol
 """
+#%%
 import os
-os.chdir('/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject/MultipleOutputs')
+os.chdir('/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject/task-interference')
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
@@ -15,14 +16,14 @@ import pandas as pd
 from scipy.stats import ttest_ind, ttest_rel
 #%%
 name1 = 'SH2_correctA'
-folder1 = 'SelfHistory/SH2/correctA'
-testname1 = 'testMonkeyHist_alltestinds_noisevis0.8mem0.5rec0.1'
+folder1 = 'correct_choice_model/test_data'
+testname1 = 'monkeyhist_alltestinds_noisevis0.8mem0.5rec0.1'
 outputs1 = pickle.load(open(f'./{folder1}/{name1}_{testname1}_modeloutput.pickle', 'rb'))
 trial_params1 = pickle.load(open(f'./{folder1}/{name1}_{testname1}_trialparams.pickle', 'rb'))
 test_inds1 = np.array([trial_params1[i]['trial_ind'] for i in range(trial_params1.shape[0])])
 
 name2 = 'MM1_monkeyB1245'
-folder2 = 'monkeyModel/monkeyB'
+folder2 = 'monkey_choice_model/test_data'
 testname2 = 'alltestinds_noisevis0.8mem0.5rec0.1'
 outputs2 = pickle.load(open(f'./{folder2}/{name2}_{testname2}_modeloutput.pickle', 'rb'))
 trial_params2 = pickle.load(open(f'./{folder2}/{name2}_{testname2}_trialparams.pickle', 'rb'))
@@ -31,8 +32,8 @@ test_inds2 = np.array([trial_params2[i]['trial_ind'] for i in range(trial_params
 prevErr = np.array([trial_params1[i]['choice'][-2]!=trial_params1[i]['correct'][-2] \
                     for i in range(trial_params1.shape[0])])
 K=10
-aR_inds = np.load(open(f'./SimplifyData/K{K}trainable_aRinds.npy', 'rb'))
-aNR_inds = np.load(open(f'./SimplifyData/K{K}trainable_aNRinds.npy', 'rb'))
+aR_inds = np.load(open(f'./data_inds/K{K}trainable_aRinds.npy', 'rb'))
+aNR_inds = np.load(open(f'./data_inds/K{K}trainable_aNRinds.npy', 'rb'))
 
 #%% define and plot boundary
 t0 = 145
@@ -43,12 +44,14 @@ c = 28
 
 bound = a * (1 - b * t/(t+c))
 
-#plt.figure()
 plt.plot(t+t0, bound)
 plt.ylim(-0.4, 1.4)
 plt.hlines(0,0,180,ls='--', colors='k')
 
 #%% compute RTs
+
+assert np.array_equal(test_inds1, test_inds2), 'test trials must be identical to compute pairwise differences'
+
 RT1 = np.zeros(outputs1.shape[0])
 choice_RT1 = np.zeros(outputs1.shape[0])
 for i in range(outputs1.shape[0]):
@@ -79,9 +82,13 @@ RTdiff = RT2 - RT1
 
 _, p_rel_aNR = ttest_rel(RT2[prevErr], RT1[prevErr])
 _, p_rel_aR = ttest_rel(RT2[prevErr==False], RT1[prevErr==False])
-_, p_diff_aRvsNR = ttest_ind(RTdiff[prevErr==False], RTdiff[prevErr])
-print(p_diff_aRvsNR)
+_, p_diff_aRvsNR = ttest_ind(RTdiff[prevErr], RTdiff[prevErr==False])
+print('pairwise aNR: p=', p_rel_aNR)
+print('pairwise aR: p=', p_rel_aR)
+print('aR vs aNR differences: p=', p_diff_aRvsNR)
+
 #%% difference plot aR vs aNR, proportion of trials histogram
+
 rcParams['font.size'] = 11
 rcParams['font.sans-serif'] = 'Helvetica'
 
