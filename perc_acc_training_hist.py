@@ -45,20 +45,14 @@ pAcc_aNR_ = np.array(percAcc_training['pAcc_aNR'])
 
 #%% sliding window average over epochs
 
-n_avg = 15
-n_steps = pAcc_aR_.shape[0] - n_avg
-pAcc_aR_sw = np.zeros((2, n_steps))
-pAcc_aNR_sw = np.zeros((2, n_steps))
-pAcc_diff_sw = np.zeros((2, n_steps))
+n_avg = 100
+pAcc_aR_sw = mf.sliding_window_avg(pAcc_aR_, n_avg, None)
+pAcc_aNR_sw  = mf.sliding_window_avg(pAcc_aNR_, n_avg, None)
+pAcc_diff_sw = mf.sliding_window_avg(pAcc_aR_ - pAcc_aNR_, n_avg, None)
+n_steps = pAcc_diff_sw.shape[1]
 
-for i in range(n_steps):
-    pAcc_aR_sw[0, i] = np.mean(pAcc_aR_[i:i+n_avg])
-    pAcc_aR_sw[1, i] = np.std(pAcc_aR_[i:i+n_avg])
-    pAcc_aNR_sw[0, i] = np.mean(pAcc_aNR_[i:i+n_avg])
-    pAcc_aNR_sw[1, i] = np.std(pAcc_aNR_[i:i+n_avg])
-    diffs = pAcc_aR_[i:i+n_avg] - pAcc_aNR_[i:i+n_avg]
-    pAcc_diff_sw[0, i] = np.mean(diffs)
-    pAcc_diff_sw[1, i] = np.std(diffs)
+np.savez(f'./{folder}/{name}_pAccDuringTraining_hist_sw{n_avg}.npz', 
+         pAcc_aR_sw=pAcc_aR_sw, pAcc_aNR_sw=pAcc_aNR_sw, pAcc_diff_sw=pAcc_diff_sw)
 
 #%% stacked subplots
 
@@ -67,12 +61,12 @@ t = st.t.ppf(q=0.975, df=n_avg-1)
 fig, axs = plt.subplots(2, sharex=True, figsize=(5,4))
 
 axs[0].fill_between(np.arange(n_steps), 
-                    pAcc_aR_sw[0, :] - t/np.sqrt(n_avg)*pAcc_aR_sw[1, :], 
-                    pAcc_aR_sw[0, :] + t/np.sqrt(n_avg)*pAcc_aR_sw[1, :], 
+                    pAcc_aR_sw[0, :] - t*pAcc_aR_sw[1, :], 
+                    pAcc_aR_sw[0, :] + t*pAcc_aR_sw[1, :], 
                     color='b', alpha=0.2, edgecolor='none')
 axs[0].fill_between(np.arange(n_steps), 
-                    pAcc_aNR_sw[0, :] - t/np.sqrt(n_avg)*pAcc_aNR_sw[1, :], 
-                    pAcc_aNR_sw[0, :] + t/np.sqrt(n_avg)*pAcc_aNR_sw[1, :], 
+                    pAcc_aNR_sw[0, :] - t*pAcc_aNR_sw[1, :], 
+                    pAcc_aNR_sw[0, :] + t*pAcc_aNR_sw[1, :], 
                     color='r', alpha=0.2, edgecolor='none')
 axs[0].plot(pAcc_aR_sw[0, :], c='g', label='after reward')
 axs[0].plot(pAcc_aNR_sw[0, :], c='r', label='after non-reward')
@@ -81,8 +75,8 @@ axs[0].legend()
 
 axs[1].plot(pAcc_diff_sw[0,:])
 axs[1].fill_between(np.arange(n_steps), 
-                    pAcc_diff_sw[0,:] - t/np.sqrt(n_avg)*pAcc_diff_sw[1,:], 
-                    pAcc_diff_sw[0,:] + t/np.sqrt(n_avg)*pAcc_diff_sw[1,:], 
+                    pAcc_diff_sw[0,:] - t*pAcc_diff_sw[1,:], 
+                    pAcc_diff_sw[0,:] + t*pAcc_diff_sw[1,:], 
                     alpha=0.2)
 axs[1].hlines(0.0506, 0, n_steps, color='grey', ls='--', label='monkeys')
 axs[1].hlines(0, 0, n_steps, color='k', ls='--', zorder=0)

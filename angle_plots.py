@@ -58,13 +58,99 @@ max_dcovs1 = np.maximum(dcovs_sl_mat1, dcovs_sf_mat1)
 min_dcovs2 = np.minimum(dcovs_sl_mat2, dcovs_sf_mat2)
 max_dcovs2 = np.maximum(dcovs_sl_mat2, dcovs_sf_mat2)
 
+#%% magnitude of projection of irrelevant onto relevant axis histogram
+
+proj1 = np.zeros((N_trialhists, timepoints.shape[0]))
+proj2 = np.zeros((N_trialhists, timepoints.shape[0]))
+
+for i in range(N_trialhists):
+    
+    proj1[i] = np.array([np.dot(df1.loc[i, 'ax_sl'][t], df1.loc[i, 'ax_sf'][t]) \
+                         for t in range(timepoints.shape[0])])
+    proj1[i] *= min_dcovs1[i]
+
+    proj2[i] = np.array([np.dot(df2.loc[i, 'ax_sl'][t], df2.loc[i, 'ax_sf'][t]) \
+                      for t in range(timepoints.shape[0])])
+    proj2[i] *= min_dcovs2[i]
+
+tpt = 4
+lim = 0.15
+binsize = 0.005
+bins = np.arange(0, lim+binsize, binsize)
+bin_centers = (bins[1:] + bins[:-1])/2
+
+props1_aNR, _ = np.histogram(np.abs(proj1[aNR_inds, tpt]), bins=bins, density=True)
+props2_aNR, _ = np.histogram(np.abs(proj2[aNR_inds, tpt]), bins=bins, density=True)
+props1_aR, _ = np.histogram(np.abs(proj1[aR_inds, tpt]), bins=bins, density=True)
+props2_aR, _ = np.histogram(np.abs(proj2[aR_inds, tpt]), bins=bins, density=True)
+
+med1_aNR = np.median(np.abs(proj1[aNR_inds, tpt]))
+med2_aNR = np.median(np.abs(proj2[aNR_inds, tpt]))
+med1_aR = np.median(np.abs(proj1[aR_inds, tpt]))
+med2_aR = np.median(np.abs(proj2[aR_inds, tpt]))
+
+# plot
+colors = ['orangered', 'darkblue', 'orange', 'cornflowerblue']
+plt.plot(bin_centers, props1_aNR, color=colors[0], ls = '-', lw=2, zorder=3,
+         label='monkey choice model, after unrewarded trial')
+
+plt.plot(bin_centers, props2_aNR, color=colors[1], ls = '-', lw=2, zorder=0,
+         label='correct choice model, after unrewarded trial')
+
+plt.plot(bin_centers, props1_aR, color=colors[2], ls = '-', lw=2, zorder=2, 
+         label='monkey choice model, after rewarded trial')
+
+plt.plot(bin_centers, props2_aR, color=colors[3], ls = '-', lw=2, zorder=1,
+         label='correct choice model, after rewarded trial')
+
+med_y = 100
+plt.scatter([med1_aNR, med2_aNR, med1_aR, med2_aR], np.tile(med_y, 4),
+            c=colors, marker='v')
+
+plt.legend()
+plt.xlabel('Magnitude of projection of irrelevant axis onto relevant axis')
+plt.ylabel('Probability density')
+
+rcParams['pdf.fonttype']=42
+rcParams['pdf.use14corefonts']=True
+plt.savefig(f'./MM1_monkeyB1245_vs_SH2_correctA_projhist_aNRaR_tpt{tpt}_meds.pdf', dpi=300, transparent=True)
+
+#%% statistical testing
+
+
+#%% projection histogram, pooling aR and aNR trials
+
+tpt = 4
+lim = 0.15
+binsize = 0.003
+bins = np.arange(0, lim+binsize, binsize)
+bin_centers = (bins[1:] + bins[:-1])/2
+
+props1, _ = np.histogram(np.abs(proj1[:, tpt]), bins=bins, density=True)
+props2, _ = np.histogram(np.abs(proj2[:, tpt]), bins=bins, density=True)
+
+med1 = np.median(np.abs(proj1[:, tpt]))
+med2 = np.median(np.abs(proj2[:, tpt]))
+
+# plot
+plt.plot(bin_centers, props1, color='orange', ls = '-', lw=2, zorder=3,
+         label='monkey choice model')
+plt.plot(bin_centers, props2, color='darkblue', ls = '-', lw=2, zorder=2,
+         label='correct choice model')
+med_y = 80
+plt.scatter([med1, med2], np.tile(med_y, 2), c=['orange', 'darkblue'], marker='v')
+
+plt.legend()
+plt.xlabel('Magnitude of projection of irrelevant axis onto relevant axis')
+plt.ylabel('Probability density')
+
 #%% angles histogram at one timepoint, dcov threshold
 
 tpt = 4
 bins = np.arange(0, 91, 3)
 bin_centers = (bins[1:] + bins[:-1])/2
 
-thresh_fac = 0.1
+thresh_fac = 0.15
 thresh = thresh_fac*np.mean(np.stack((dcovs_sl_mat1[:,0], dcovs_sf_mat1[:,0],
                                       dcovs_sl_mat2[:,0], dcovs_sf_mat2[:,0])))
 
@@ -124,48 +210,6 @@ plt.plot(bin_centers, weighted_counts2, color='darkblue', label='correct choice 
 plt.legend()
 plt.xlabel('Angle')
 plt.ylabel('Weighted counts')
-
-#%% magnitude of projection of irrelevant onto relevant axis histogram
-
-proj1 = np.zeros((N_trialhists, timepoints.shape[0]))
-proj2 = np.zeros((N_trialhists, timepoints.shape[0]))
-
-for i in range(N_trialhists):
-    
-    proj1[i] = np.array([np.dot(df1.loc[i, 'ax_sl'][t], df1.loc[i, 'ax_sf'][t]) \
-                         for t in range(timepoints.shape[0])])
-    proj1[i] *= min_dcovs1[i]
-
-    proj2[i] = np.array([np.dot(df2.loc[i, 'ax_sl'][t], df2.loc[i, 'ax_sf'][t]) \
-                      for t in range(timepoints.shape[0])])
-    proj2[i] *= min_dcovs2[i]
-
-tpt = 4
-lim = 0.15
-binsize = 0.005
-bins = np.arange(0, lim+binsize, binsize)
-bin_centers = (bins[1:] + bins[:-1])/2
-
-props1_aNR, _ = np.histogram(np.abs(proj1[aNR_inds, tpt]), bins=bins, density=True)
-plt.plot(bin_centers, props1_aNR, color='orange', ls = '-', lw=2, zorder=3,
-         label='monkey choice model, after unrewarded trial')
-props2_aNR, _ = np.histogram(np.abs(proj2[aNR_inds, tpt]), bins=bins, density=True)
-plt.plot(bin_centers, props2_aNR, color='darkblue', ls = '-', lw=2, zorder=2,
-         label='correct choice model, after unrewarded trial')
-props1_aR, _ = np.histogram(np.abs(proj1[aR_inds, tpt]), bins=bins, density=True)
-plt.plot(bin_centers, props1_aR, color='orange', ls = '--', lw=2, zorder=1, 
-         label='monkey choice model, after rewarded trial')
-props2_aR, _ = np.histogram(np.abs(proj2[aR_inds, tpt]), bins=bins, density=True)
-plt.plot(bin_centers, props2_aR, color='darkblue', ls = '--', lw=2, zorder=0,
-         label='correct choice model, after rewarded trial')
-
-plt.legend()
-plt.xlabel('Magnitude of projection of irrelevant axis onto relevant axis')
-plt.ylabel('Probability density')
-
-rcParams['pdf.fonttype']=42
-rcParams['pdf.use14corefonts']=True
-#plt.savefig(f'./MM1_monkeyB1245_vs_SH2_correctA_projhist_aNRaR_tpt{tpt}.pdf', dpi=300, transparent=True)
 
 #%% angle vs time scatterplots
 
