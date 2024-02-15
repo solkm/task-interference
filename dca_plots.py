@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import os
+import scipy.stats as st
 os.chdir('/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject/task-interference')
 
 def angles_0to90(a):
@@ -113,10 +114,27 @@ plt.ylabel('Probability density')
 
 rcParams['pdf.fonttype']=42
 rcParams['pdf.use14corefonts']=True
-plt.savefig(f'./MM1_monkeyB1245_vs_SH2_correctA_projhist_aNRaR_tpt{tpt}_meds.pdf', dpi=300, transparent=True)
+#plt.savefig(f'./MM1_monkeyB1245_vs_SH2_correctA_projhist_aNRaR_tpt{tpt}_meds.pdf', dpi=300, transparent=True)
 
 #%% statistical testing
 
+_, p_aNR1_aNR2 = st.ranksums(np.abs(proj1[aNR_inds, tpt]), np.abs(proj2[aNR_inds, tpt]))
+print('aNR monkey > aNR correct: p=%4.3e'%p_aNR1_aNR2)
+
+_, p_aR1_aR2 = st.ranksums(np.abs(proj1[aR_inds, tpt]), np.abs(proj2[aR_inds, tpt]))
+print('aR monkey > aR correct: p=%4.3e'%p_aR1_aR2)
+
+_, p_aR1_aNR1 = st.ranksums(np.abs(proj1[aR_inds, tpt]), np.abs(proj1[aNR_inds, tpt]))
+print('aR monkey > aNR monkey: p=%4.3e'%p_aR1_aNR1)
+
+_, p_aNR2_aR2 = st.ranksums(np.abs(proj2[aNR_inds, tpt]), np.abs(proj2[aR_inds, tpt]))
+print('aNR correct > aR correct: p=%4.3e'%p_aNR2_aR2)
+
+_, p_aNR1_aR2 = st.ranksums(np.abs(proj1[aNR_inds, tpt]), np.abs(proj2[aR_inds, tpt]))
+print('aNR monkey > aR correct: p=%4.3e'%p_aNR1_aR2)
+
+_, p_aR1_aNR2 = st.ranksums(np.abs(proj1[aR_inds, tpt]), np.abs(proj2[aNR_inds, tpt]))
+print('aR monkey > aNR correct: p=%4.3e'%p_aR1_aNR2)
 
 #%% projection histogram, pooling aR and aNR trials
 
