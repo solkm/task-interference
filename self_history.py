@@ -477,7 +477,8 @@ class Task_SH2(Task):
         return np.array(x_data), np.array(y_data), np.array(mask), np.array(params)
     
     def generate_trial_params(self, batch, trial):
-        """"Define parameters for each trial using MONKEY trial history. Used in batch_generator.
+        """"Define parameters for each trial using MONKEY trial history. Called in batch_generator.
+        Same as Task_MM1 for testing purposes.
 
         Using a combination of randomness, presets, and task attributes, define the necessary trial parameters.
 
@@ -552,7 +553,7 @@ class Task_SH2(Task):
         return params
     
     def batch_generator(self):
-        """ Returns a generator for this task. Unchanged code, used in get_trial_batch().
+        """ Returns a generator for this task. Unchanged code, called in get_trial_batch().
 
         Returns:
             Generator[tuple, None, None]:
