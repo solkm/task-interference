@@ -20,11 +20,6 @@ def get_condition_accs(df, feature, chosen_task, reward_cond):
           & (df['reward_cond']==reward_cond)
     return np.array(df.loc[cond, 'acc_t0':'acc_t50'])
 
-def get_condition_accs_v1(df, feature, chosen_task, reward_cond):
-    cond = (df['stim1 decoder']==feature) & (df['chosen task']==chosen_task) \
-          & (df['reward cond']==reward_cond)
-    return np.array(df.loc[cond, 'accuracy t0':'accuracy t45'])
-
 #%% Load feature decoder accuracy dataframes, separate accuracies by the four
 # task-belief conditions (chosen task and previous trial reward outcome)
 
@@ -123,11 +118,11 @@ rcParams['pdf.use14corefonts']=True
 #%% scatterplot, aR vs aNR, 2 models
 
 # SL decoder when SL is believed-irrelevant
-tp = -2
+tp = 4
 rcParams['font.size'] = 11
 rcParams['font.sans-serif'] = 'Helvetica'
 plt.figure(figsize=(5, 5))
-plt.plot(np.arange(0.45, 0.76, 0.05), np.arange(0.45, 0.76, 0.05), c='k', lw=1)
+plt.plot(np.arange(0.45, 0.71, 0.05), np.arange(0.45, 0.71, 0.05), c='k', lw=1)
 
 plt.scatter(mod1SL_SFaR[:, tp], mod1SL_SFaNR[:, tp], c='orange', 
             label=f'{mod1_name}', alpha=0.6, lw=2, zorder=1)
@@ -143,16 +138,17 @@ plt.scatter(np.mean(mod2SL_SFaR[:, tp]), np.mean(mod2SL_SFaNR[:, tp]), c='dodger
 
 plt.xticks([0.5, 0.55, 0.6, 0.65, 0.7])
 plt.yticks([0.5, 0.55, 0.6, 0.65, 0.7])
-plt.title(f'SL decoder accuray on SF trial\n(end of delay, {timepoints[tp]*10} ms)')
+plt.title(f'SL decoder accuray on SF trial\n(end of delay, {tp*100} ms)')
 plt.xlabel('after reward')
 plt.ylabel('after non-reward')
-plt.xlim(0.5, 0.75)
-plt.ylim(0.5, 0.75)
-plt.legend()
+plt.xlim(0.45, 0.72)
+plt.ylim(0.45, 0.72)
+plt.legend(loc='lower right')
+plt.gca().set_aspect('equal')
 plt.tight_layout()
 
 rcParams['pdf.fonttype']=42
 rcParams['pdf.use14corefonts']=True
-#plt.savefig(f'./{folder}/{subfolder}/{mod1_name}v{mod2_name}_SLdecoderAccsEndDelay_SFtrialaNRvR_{mod1SL_SFaR.shape[0]}and{mod2SL_SFaR.shape[0]}conds.pdf', dpi=300, transparent=True)
+#plt.savefig(f'./{mod1_name}v{mod2_name}_SLdecoderAccs_SFtrialaNRvR_tpt{tp}.pdf', dpi=300, transparent=True)
 
 #%%

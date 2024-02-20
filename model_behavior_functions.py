@@ -22,6 +22,40 @@ def get_tasks(choices):
 
     return tasks
 
+def get_overall_acc(model_choice, trial_params):
+
+    N_testbatch = trial_params.shape[0]
+    correct_choice = [trial_params[i]['correct'][-1] for i in range(N_testbatch)]
+    accuracy = np.count_nonzero(correct_choice==model_choice)/N_testbatch
+
+    return accuracy
+
+def get_task_acc(model_choice, trial_params):
+
+    N_testbatch = trial_params.shape[0]
+    correct_task = [trial_params[i]['task'][-1] for i in range(N_testbatch)]
+    model_task = get_tasks(model_choice)
+    task_acc = np.count_nonzero(correct_task==model_task)/N_testbatch
+
+    return task_acc
+
+def get_monkeychoice_acc(model_choice, trial_params):
+    
+    N_testbatch = trial_params.shape[0]
+    monkey_choice = [trial_params[i]['choice'][-1] for i in range(N_testbatch)]
+    monkeychoice_acc = np.count_nonzero(monkey_choice==model_choice)/N_testbatch
+
+    return monkeychoice_acc
+
+def get_monkeytask_acc(model_choice, trial_params):
+    
+    N_testbatch = trial_params.shape[0]
+    monkey_task = [trial_params[i]['m_task'][-1] for i in range(N_testbatch)]
+    model_task = get_tasks(model_choice)
+    monkeytask_acc = np.count_nonzero(monkey_task==model_task)/N_testbatch
+
+    return monkeytask_acc
+
 def get_perc_acc(model_choice, trial_params, dsl=None, dsf=None):
     """
     Parameters

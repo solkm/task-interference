@@ -74,7 +74,7 @@ for i in range(N_trialhists):
                       for t in range(timepoints.shape[0])])
     proj2[i] *= min_dcovs2[i]
 
-tpt = 4
+tpt = 0
 lim = 0.15
 binsize = 0.005
 bins = np.arange(0, lim+binsize, binsize)
@@ -104,7 +104,7 @@ plt.plot(bin_centers, props1_aR, color=colors[2], ls = '-', lw=2, zorder=2,
 plt.plot(bin_centers, props2_aR, color=colors[3], ls = '-', lw=2, zorder=1,
          label='correct choice model, after rewarded trial')
 
-med_y = 100
+med_y = 1.05*np.max(props2_aR) #100
 plt.scatter([med1_aNR, med2_aNR, med1_aR, med2_aR], np.tile(med_y, 4),
             c=colors, marker='v')
 
@@ -119,22 +119,22 @@ rcParams['pdf.use14corefonts']=True
 #%% statistical testing
 
 _, p_aNR1_aNR2 = st.ranksums(np.abs(proj1[aNR_inds, tpt]), np.abs(proj2[aNR_inds, tpt]))
-print('aNR monkey > aNR correct: p=%4.3e'%p_aNR1_aNR2)
+print('aNR monkey vs aNR correct: p=%4.3e'%p_aNR1_aNR2)
 
 _, p_aR1_aR2 = st.ranksums(np.abs(proj1[aR_inds, tpt]), np.abs(proj2[aR_inds, tpt]))
-print('aR monkey > aR correct: p=%4.3e'%p_aR1_aR2)
+print('aR monkey vs aR correct: p=%4.3e'%p_aR1_aR2)
 
 _, p_aR1_aNR1 = st.ranksums(np.abs(proj1[aR_inds, tpt]), np.abs(proj1[aNR_inds, tpt]))
-print('aR monkey > aNR monkey: p=%4.3e'%p_aR1_aNR1)
+print('aR monkey vs aNR monkey: p=%4.3e'%p_aR1_aNR1)
 
 _, p_aNR2_aR2 = st.ranksums(np.abs(proj2[aNR_inds, tpt]), np.abs(proj2[aR_inds, tpt]))
-print('aNR correct > aR correct: p=%4.3e'%p_aNR2_aR2)
+print('aNR correct vs aR correct: p=%4.3e'%p_aNR2_aR2)
 
 _, p_aNR1_aR2 = st.ranksums(np.abs(proj1[aNR_inds, tpt]), np.abs(proj2[aR_inds, tpt]))
-print('aNR monkey > aR correct: p=%4.3e'%p_aNR1_aR2)
+print('aNR monkey vs aR correct: p=%4.3e'%p_aNR1_aR2)
 
 _, p_aR1_aNR2 = st.ranksums(np.abs(proj1[aR_inds, tpt]), np.abs(proj2[aNR_inds, tpt]))
-print('aR monkey > aNR correct: p=%4.3e'%p_aR1_aNR2)
+print('aR monkey vs aNR correct: p=%4.3e'%p_aR1_aNR2)
 
 #%% projection histogram, pooling aR and aNR trials
 
@@ -248,3 +248,5 @@ fig.supxlabel('Time (10 ms)')
 
 ax[0].set_title('monkey choice model')
 ax[1].set_title('correct choice model')
+
+# %%
