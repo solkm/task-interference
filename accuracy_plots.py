@@ -4,6 +4,7 @@ import pickle
 import model_behavior_functions as mbf
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
+from statsmodels.stats.proportion import proportions_ztest
 
 # load model outputs and trial parameters
 mod1_name = 'MM1_monkeyB1245'
@@ -34,6 +35,15 @@ mod2_monkeychoice_acc = mbf.get_monkeychoice_acc(mod2_choices, mod2_trialparams)
 
 mod1_monkeytask_acc = mbf.get_monkeytask_acc(mod1_choices, mod1_trialparams)
 mod2_monkeytask_acc = mbf.get_monkeytask_acc(mod2_choices, mod2_trialparams)
+
+#%% p-values
+
+N1 = mod1_choices.shape[0]
+N2 = mod2_choices.shape[0]
+acc1 = mod1_monkeychoice_acc
+acc2 = mod2_monkeychoice_acc
+proportions_ztest([round(acc1*N1), round(acc2*N2)], [N1, N2])
+
 
 # %% barplot
 

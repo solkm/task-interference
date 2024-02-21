@@ -25,8 +25,7 @@ def angles_0to90(a):
 df1 = pd.read_pickle('monkey_choice_model/MM1_monkeyB1245_DCAdf.pkl')
 df2 = pd.read_pickle('./correct_choice_model/SH2_correctA_DCAdf.pkl')
 
-# extract arrays
-
+# extract angle and dcov arrays
 timepoints = np.arange(70, 121, 10)
 N_trialhists = min(df1.shape[0], df2.shape[0])
 aR_inds, aNR_inds = [], []
@@ -59,8 +58,7 @@ max_dcovs1 = np.maximum(dcovs_sl_mat1, dcovs_sf_mat1)
 min_dcovs2 = np.minimum(dcovs_sl_mat2, dcovs_sf_mat2)
 max_dcovs2 = np.maximum(dcovs_sl_mat2, dcovs_sf_mat2)
 
-#%% magnitude of projection of irrelevant onto relevant axis histogram
-
+# projection of irrelevant axis onto relevant axis
 proj1 = np.zeros((N_trialhists, timepoints.shape[0]))
 proj2 = np.zeros((N_trialhists, timepoints.shape[0]))
 
@@ -74,7 +72,9 @@ for i in range(N_trialhists):
                       for t in range(timepoints.shape[0])])
     proj2[i] *= min_dcovs2[i]
 
-tpt = 0
+#%% magnitude of projection of irrelevant onto relevant axis histogram
+
+tpt = 4
 lim = 0.15
 binsize = 0.005
 bins = np.arange(0, lim+binsize, binsize)
@@ -104,7 +104,7 @@ plt.plot(bin_centers, props1_aR, color=colors[2], ls = '-', lw=2, zorder=2,
 plt.plot(bin_centers, props2_aR, color=colors[3], ls = '-', lw=2, zorder=1,
          label='correct choice model, after rewarded trial')
 
-med_y = 1.05*np.max(props2_aR) #100
+med_y = 1.05*np.max(props2_aNR)
 plt.scatter([med1_aNR, med2_aNR, med1_aR, med2_aR], np.tile(med_y, 4),
             c=colors, marker='v')
 
@@ -135,6 +135,82 @@ print('aNR monkey vs aR correct: p=%4.3e'%p_aNR1_aR2)
 
 _, p_aR1_aNR2 = st.ranksums(np.abs(proj1[aR_inds, tpt]), np.abs(proj2[aNR_inds, tpt]))
 print('aR monkey vs aNR correct: p=%4.3e'%p_aR1_aNR2)
+
+#%% projection vs time violin plots with median: both models, only aNR
+
+def set_violin_color(vplots, color, alpha=0.1):
+    for key in vplots.keys():
+        if key == 'bodies':
+            for v in vplots[key]:
+                v.set_edgecolor(color)
+                v.set_facecolor(color)
+                v.set_alpha(alpha)
+        else:
+            vplots[key].set_color(color)
+
+colors = ['orangered', 'darkblue']
+ms = 12
+plt.figure(figsize=(4,4))
+vplots1_aNR = plt.violinplot(np.abs(proj1[aNR_inds, :]), positions=timepoints, 
+                             widths=5, showmedians=False, showextrema=False)
+set_violin_color(vplots1_aNR, colors[0])
+med1_aNR = np.median(np.abs(proj1[aNR_inds, :]), axis=0)
+plt.plot(timepoints, med1_aNR, color=colors[0], lw=1)
+plt.scatter(timepoints, med1_aNR, color=colors[0], marker='o', s=ms,
+            label='monkey choice network')
+
+vplots2_aNR = plt.violinplot(np.abs(proj2[aNR_inds, :]), positions=timepoints, 
+                             widths=5, showmedians=False, showextrema=False)
+set_violin_color(vplots2_aNR, colors[1])
+med2_aNR = np.median(np.abs(proj2[aNR_inds, :]), axis=0)
+plt.plot(timepoints, med2_aNR, color=colors[1], lw=1)
+plt.scatter(timepoints, med2_aNR, color=colors[1], marker='o', s=ms,
+            label='correct choice network')
+
+plt.xticks(timepoints, np.arange(0, 501, 100))
+plt.xlabel('Time after stimulus 1 offset (ms)')
+plt.ylabel('Magnitude of projection')
+plt.title('Projection of irrelevant axis onto relevant axis\n after an unrewarded trial')
+plt.legend()
+plt.tight_layout()
+rcParams['pdf.fonttype']=42
+rcParams['pdf.use14corefonts']=True
+#plt.savefig(f'./MM1_monkeyB1245_vs_SH2_correctA_projaNR_timecourse.pdf', dpi=300, transparent=True)
+
+#%% projection vs time violin plots with median: both models, aNR and aR
+
+colors = ['orangered', 'darkblue', 'orange', 'cornflowerblue']
+ms = 10
+fig, ax = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(8,4))
+
+vplots1_aNR = ax[0].violinplot(np.abs(proj1[aNR_inds, :]), positions=timepoints, 
+                               widths=5, showmedians=False, showextrema=False)
+set_violin_color(vplots1_aNR, colors[0])
+med1_aNR = np.median(np.abs(proj1[aNR_inds, :]), axis=0)
+ax[0].plot(timepoints, med1_aNR, color=colors[0], lw=1, label='median')
+ax[0].scatter(timepoints, med1_aNR, color=colors[0], marker='o', s=ms)
+
+vplots1_aR = ax[0].violinplot(np.abs(proj1[aR_inds, :]), positions=timepoints, 
+                              widths=5, showmedians=False, showextrema=False)
+set_violin_color(vplots1_aR, colors[2])
+med1_aR = np.median(np.abs(proj1[aR_inds, :]), axis=0)
+ax[0].plot(timepoints, med1_aR, color=colors[2], lw=1, label='median')
+ax[0].scatter(timepoints, med1_aR, color=colors[2], marker='o', s=ms)
+
+vplots2_aNR = ax[1].violinplot(np.abs(proj2[aNR_inds, :]), positions=timepoints, 
+                               widths=5, showmedians=False, showextrema=False)
+set_violin_color(vplots2_aNR, colors[1])
+med2_aNR = np.median(np.abs(proj2[aNR_inds, :]), axis=0)
+ax[1].plot(timepoints, med2_aNR, color=colors[1], lw=1, label='median')
+ax[1].scatter(timepoints, med2_aNR, color=colors[1], marker='o', s=ms)
+
+vplots2_aR = ax[1].violinplot(np.abs(proj2[aR_inds, :]), positions=timepoints, 
+                              widths=5, showmedians=False, showextrema=False)
+set_violin_color(vplots2_aR, colors[3])
+med2_aR = np.median(np.abs(proj2[aR_inds, :]), axis=0)
+ax[1].plot(timepoints, med2_aR, color=colors[3], lw=1, label='median')
+ax[1].scatter(timepoints, med2_aR, color=colors[3], marker='o', s=ms)
+
 
 #%% projection histogram, pooling aR and aNR trials
 
