@@ -78,10 +78,9 @@ class Task_MM1(Task):
             if self.fixedSF[1] is not None:
                 params['sf2'] = self.fixedSF[1]
                 dsf = self.fixedSF[1] - self.fixedSF[0]
+                params['dsf'][-1] = dsf
             else:
-                dsf = np.random.uniform(-1,1)
                 params['sf2'] = self.fixedSF[0] + dsf
-            params['dsf'][-1] = dsf
         else:
             assert self.fixedSF[1] is None, 'cannot fix only the second stimulus'
                 
@@ -91,10 +90,9 @@ class Task_MM1(Task):
             if self.fixedSL[1] is not None:
                 params['sl2'] = self.fixedSL[1]
                 dsl = self.fixedSL[1] - self.fixedSL[0]
+                params['dsl'][-1] = dsl
             else:
-                dsl = np.random.uniform(-1,1)
                 params['sl2'] = self.fixedSL[0] + dsl
-            params['dsl'][-1] = dsl
         else:
             assert self.fixedSL[1] is None, 'cannot fix only the second stimulus'
         
