@@ -70,6 +70,7 @@ for i in range(N_testiters):
     model_output_all[i*N_minibatch:(i+1)*N_minibatch,:,:] = model_output
 
     print('iter: ', i)
+    del test_inputs, trial_params, model_output
     
 savename = f'./{folder}/{name}_monkeyhist_allinds_noisevis{vis_noise}mem{mem_noise}rec{rec_noise}'
 savefile = open(savename+'_modeloutput.pickle','wb')

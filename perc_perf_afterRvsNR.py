@@ -23,13 +23,13 @@ data_paths_ = [data_path1, data_path2]
 names_ = [name1, name2]
 
 stim_cond = 'change_both' # 'change_chosen' # 
-n_acc = 50
+n_acc = 20
 one_acc_per_cond = True
 
-plot = False
+plot = True
 if plot:
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
-    fontsize = 12
+    fig, ax = plt.subplots(1, 2, figsize=(10, 5), sharex=True, sharey=True)
+    fontsize = 10
     rcParams['font.sans-serif'] = 'Helvetica'
     rcParams['font.size'] = fontsize
     dotsize = 40
@@ -74,7 +74,7 @@ for i in range(len(data_paths_)):
         ax[i].scatter(np.mean(SF_perf_aR), np.mean(SF_perf_aNR), s=dotsize*2, 
                     marker='o', edgecolors='k', facecolors='cyan', linewidths=lw*1.2, 
                     label='SF choice mean, p=%2.1e'%p_SF, alpha=0.9, zorder=1)
-        ax[i].legend(loc='upper left', fontsize=fontsize-2)
+        ax[i].legend(loc='upper left', fontsize=fontsize-1)
         ax[i].set_title(names_[i], fontsize=fontsize)
         ax[i].set_xlim(left=0.15)
         ax[i].set_ylim(bottom=0.15)
@@ -104,27 +104,30 @@ if plot:
     rcParams['pdf.use14corefonts']=True
     #plt.savefig(f'./{name1}_and_{name2}_perceptualaccuracyafterRvsNR.pdf', dpi=300, transparent=True)
 
-# %% which conditions lead to the biggest differences?
+# %% visualize which conditions lead to the biggest differences
 
 SL_diffs = ppss_dicts[0]['SL_perf_aR'] - ppss_dicts[0]['SL_perf_aNR']
 SF_diffs = ppss_dicts[0]['SF_perf_aR'] - ppss_dicts[0]['SF_perf_aNR']
 sorted_SL_inds = np.argsort(SL_diffs)
 sorted_SF_inds = np.argsort(SF_diffs)
-sorted_SL_conds = ppss_dicts[0]['SL_conds'][sorted_SL_inds]
-sorted_SF_conds = ppss_dicts[0]['SF_conds'][sorted_SF_inds]
+SL_conds = ppss_dicts[0]['SL_conds']
+SF_conds = ppss_dicts[0]['SF_conds']
+sorted_SL_conds = SL_conds[sorted_SL_inds]
+sorted_SF_conds = SF_conds[sorted_SF_inds]
 
 # %matplotlib widget
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
-ax.scatter(sorted_SL_conds[:, 0], sorted_SL_conds[:, 1], SL_diffs[sorted_SL_inds])
+ax.scatter(SL_conds[:, 0], SL_conds[:, 1], SL_diffs)
 ax.set_xlabel('dSL')
 ax.set_ylabel('dSF')
 ax.set_zlabel('SL perc acc difference')
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
-ax.scatter(sorted_SF_conds[:, 0], sorted_SF_conds[:, 1], SF_diffs[sorted_SF_inds])
+ax.scatter(SF_conds[:, 0], SF_conds[:, 1], SF_diffs)
 ax.set_xlabel('dSL')
 ax.set_ylabel('dSF')
-ax.set_zlabel('SL perc acc difference')
+ax.set_zlabel('SF perc acc difference')
+
 # %%

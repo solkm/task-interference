@@ -7,7 +7,6 @@ Created on Mon Jun 12 14:25:29 2023
 """
 from psychrnn.tasks.task import Task
 import numpy as np
-rng = np.random.default_rng()
 
 class Task_MM1(Task):
     def __init__(self, dat=None, dat_inds=None, dt=10, tau=100, T=1800, 
@@ -66,11 +65,11 @@ class Task_MM1(Task):
         params['m_task'] = np.array(dat['m_task'][i-K+1:i+1], dtype='int')
         
         dsf = params['dsf'][-1]
-        params['sf1'] = rng.uniform(2,3)
+        params['sf1'] = np.random.uniform(2,3)
         params['sf2'] = params['sf1'] + dsf
         
         dsl = params['dsl'][-1]
-        params['sl1'] = rng.uniform(2,3)
+        params['sl1'] = np.random.uniform(2,3)
         params['sl2'] = params['sl1'] + dsl
     
         if self.fixedSF[0] is not None:
@@ -80,9 +79,9 @@ class Task_MM1(Task):
                 params['sf2'] = self.fixedSF[1]
                 dsf = self.fixedSF[1] - self.fixedSF[0]
             else:
-                dsf = rng.uniform(-1,1)
+                dsf = np.random.uniform(-1,1)
                 params['sf2'] = self.fixedSF[0] + dsf
-        
+            params['dsf'][-1] = dsf
         else:
             assert self.fixedSF[1] is None, 'cannot fix only the second stimulus'
                 
@@ -93,16 +92,16 @@ class Task_MM1(Task):
                 params['sl2'] = self.fixedSL[1]
                 dsl = self.fixedSL[1] - self.fixedSL[0]
             else:
-                dsl = rng.uniform(-1,1)
+                dsl = np.random.uniform(-1,1)
                 params['sl2'] = self.fixedSL[0] + dsl
-        
+            params['dsl'][-1] = dsl
         else:
             assert self.fixedSL[1] is None, 'cannot fix only the second stimulus'
         
         if self.fixedDelay is not None:
             params['delay2_dur'] = self.fixedDelay
         else:
-            params['delay2_dur'] = rng.uniform(300,500) # variable delay period
+            params['delay2_dur'] = np.random.uniform(300,500) # variable delay period
         
         return params
 
@@ -145,9 +144,9 @@ class Task_MM1(Task):
         fix_noise = 0.2
         
         x_t = np.zeros(self.N_in)
-        x_t[-1] += np.sqrt(2 * fix_noise**2) * rng.standard_normal(1)
-        x_t[-3:-1] += np.sqrt(2 * vis_noise**2) * rng.standard_normal(2)
-        x_t[:-3] += np.sqrt(2 * mem_noise**2) * rng.standard_normal(self.N_in-3)
+        x_t[-1] += np.sqrt(2 * fix_noise**2) * np.random.standard_normal(1)
+        x_t[-3:-1] += np.sqrt(2 * vis_noise**2) * np.random.standard_normal(2)
+        x_t[:-3] += np.sqrt(2 * mem_noise**2) * np.random.standard_normal(self.N_in-3)
         
         y_t = np.zeros(self.N_out)
         mask_t = np.ones(self.N_out)
@@ -206,7 +205,7 @@ class Task_MM1(Task):
             y_t[choice[-1] + 1] = 1
             mask_t[2:6] *= 5 # this is when choice unit outputs should be weighed heavily
             if switchTrial:
-                mask_t[2:6] *= 1.5
+                mask_t[2:6] *= 1.5 # weigh switch trials more
             
         else: # fixation period
             x_t[-1] += 1

@@ -478,7 +478,7 @@ class Task_SH2(Task):
     
     def generate_trial_params(self, batch, trial):
         """"Define parameters for each trial using MONKEY trial history. Called in batch_generator.
-        Same as Task_MM1 for testing purposes.
+        ***Same as monkey_model.Task_MM1.generate_trial_params***
 
         Using a combination of randomness, presets, and task attributes, define the necessary trial parameters.
 
@@ -528,7 +528,7 @@ class Task_SH2(Task):
             else:
                 dsf = np.random.uniform(-1,1)
                 params['sf2'] = self.fixedSF[0] + dsf
-        
+            params['dsf'][-1] = dsf
         else:
             assert self.fixedSF[1] is None, 'cannot fix only the second stimulus'
                 
@@ -541,7 +541,7 @@ class Task_SH2(Task):
             else:
                 dsl = np.random.uniform(-1,1)
                 params['sl2'] = self.fixedSL[0] + dsl
-        
+            params['dsl'][-1] = dsl
         else:
             assert self.fixedSL[1] is None, 'cannot fix only the second stimulus'
         
