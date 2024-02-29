@@ -150,6 +150,7 @@ def perc_perf_same_stim(model_choices, trial_params, n_acc=50,
         unique_changes, unique_changes_inv = np.unique(feature_changes, axis=0, return_inverse=True)
 
     SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR = [], [], [], []
+    SL_conds, SF_conds = [], []
 
     # SL choices
     if stim_cond=='change_chosen':
@@ -168,11 +169,13 @@ def perc_perf_same_stim(model_choices, trial_params, n_acc=50,
             if min_trials >= n_acc:
                 SL_perf_aR.append(np.count_nonzero(correct_perc[SL_cond_inds_aR])/SL_cond_inds_aR.shape[0])
                 SL_perf_aNR.append(np.count_nonzero(correct_perc[SL_cond_inds_aNR])/SL_cond_inds_aNR.shape[0])
+                SL_conds.append(unique_changes[i])
         else:
             for k in range(min_trials//n_acc):
                 SL_perf_aR.append(np.count_nonzero(correct_perc[SL_cond_inds_aR[k*n_acc:(k+1)*n_acc]])/n_acc)
                 SL_perf_aNR.append(np.count_nonzero(correct_perc[SL_cond_inds_aNR[k*n_acc:(k+1)*n_acc]])/n_acc)
-    
+                SL_conds.append(unique_changes[i])
+
     # SF choices
     if stim_cond=='change_chosen':
         unique_changes, unique_changes_inv = np.unique(dsf, return_inverse=True)
@@ -190,17 +193,21 @@ def perc_perf_same_stim(model_choices, trial_params, n_acc=50,
             if min_trials >= n_acc:
                 SF_perf_aR.append(np.count_nonzero(correct_perc[SF_cond_inds_aR])/SF_cond_inds_aR.shape[0])
                 SF_perf_aNR.append(np.count_nonzero(correct_perc[SF_cond_inds_aNR])/SF_cond_inds_aNR.shape[0])
+                SF_conds.append(unique_changes[i])
         else:
             for k in range(min_trials//n_acc):
                 SF_perf_aR.append(np.count_nonzero(correct_perc[SF_cond_inds_aR[k*n_acc:(k+1)*n_acc]])/n_acc)
                 SF_perf_aNR.append(np.count_nonzero(correct_perc[SF_cond_inds_aNR[k*n_acc:(k+1)*n_acc]])/n_acc)
+                SF_conds.append(unique_changes[i])
     
     SL_perf_aR = np.array(SL_perf_aR)
     SL_perf_aNR = np.array(SL_perf_aNR)
     SF_perf_aR = np.array(SF_perf_aR)
     SF_perf_aNR = np.array(SF_perf_aNR)
+    SL_conds = np.array(SL_conds)
+    SF_conds = np.array(SF_conds)
 
-    return SL_perf_aR, SL_perf_aNR, SF_perf_aR, SF_perf_aNR
+    return SL_perf_aR, SL_perf_aNR, SF_perf_aR, SF_perf_aNR, SL_conds, SF_conds
 
 def sliding_window_avg(measure, n_avg, sem=None):
     """
