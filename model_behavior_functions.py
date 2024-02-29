@@ -107,10 +107,10 @@ def get_perc_acc_afterRvsNR(model_choices, trial_params):
 
     return perf_aR, perf_aNR
 
-def perc_perf_same_stim(model_choices, trial_params, n_acc=50):
+def perc_perf_same_stim(model_choices, trial_params, n_acc=50, 
+                        stim_cond='change_chosen', one_acc_per_cond=False):
     """
     Computes perceptual performances after a reward vs. after a non-reward for the same stimulus condition.
-    A stimulus condition is defined by a unique pair of feature change values (rounded to 2 decimal places).
 
     Parameters
     ----------
@@ -119,8 +119,14 @@ def perc_perf_same_stim(model_choices, trial_params, n_acc=50):
     model_choices : array
         The model choices, from {1,2,3,4}.
     n_acc : int
-       Number of trials from which to compute an accuracy.
-        
+       (Minimum) number of trials from which to compute an accuracy (see one_acc_per_cond).
+    stim_cond : str
+        'change_chosen' or 'change_both'. 
+        If 'change_chosen', a stimulus condition is defined by the feature change amount corresponding to the chosen task only.
+        If 'change_both', a stimulus condition is defined by the feature change amounts corresponding to both tasks.
+    one_acc_per_cond : bool
+        If True, only one accuracy is computed per condition from all >=n_acc trials.
+        If False, (# trials)//n_acc accuracies are computed per condition from n_acc trials each.
     Returns
     -------
     SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR: arrays of perceptual accuracies.
@@ -128,10 +134,8 @@ def perc_perf_same_stim(model_choices, trial_params, n_acc=50):
 
     assert 4>=model_choices.all()>=1, 'model choices are invalid'
     N = len(trial_params[:])
-    dsl = np.round([trial_params[i]['dsl'][-1]*2 for i in range(N)], 2)
-    dsf = np.round([trial_params[i]['dsf'][-1]*2 for i in range(N)], 2)
-    feature_changes = np.vstack((dsl, dsf)).T
-    unique_changes, unique_changes_inv = np.unique(feature_changes, axis=0, return_inverse=True)
+    dsl = np.round([trial_params[i]['dsl'][-1] for i in range(N)], 2)
+    dsf = np.round([trial_params[i]['dsf'][-1] for i in range(N)], 2)
     chosen_task = get_tasks(model_choices)
     SL_inds = np.where(chosen_task==1)[0]
     SF_inds = np.where(chosen_task==2)[0]
@@ -141,29 +145,55 @@ def perc_perf_same_stim(model_choices, trial_params, n_acc=50):
     aNR_inds = np.where(prev_choice!=prev_correct)[0]
     correct_perc, _ = get_perc_acc(model_choices, trial_params)
 
+    if stim_cond=='change_both':
+        feature_changes = np.vstack((dsl, dsf)).T
+        unique_changes, unique_changes_inv = np.unique(feature_changes, axis=0, return_inverse=True)
+
     SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR = [], [], [], []
+
+    # SL choices
+    if stim_cond=='change_chosen':
+        unique_changes, unique_changes_inv = np.unique(dsl, return_inverse=True)
+
     for i in range(unique_changes.shape[0]):
+        if np.any(unique_changes[i]==0): # do not consider no change trials
+            continue
         cond_inds = np.where(unique_changes_inv==i)[0]
-        
-        # SL choices
         SL_cond_inds = np.intersect1d(cond_inds, SL_inds)
         SL_cond_inds_aR = np.intersect1d(SL_cond_inds, aR_inds)
         SL_cond_inds_aNR = np.intersect1d(SL_cond_inds, aNR_inds)
         min_trials = min(SL_cond_inds_aR.shape[0], SL_cond_inds_aNR.shape[0])
 
-        for k in range(min_trials//n_acc):
-            SL_perf_aR.append(np.count_nonzero(correct_perc[SL_cond_inds_aR[k*n_acc:(k+1)*n_acc]])/n_acc)
-            SL_perf_aNR.append(np.count_nonzero(correct_perc[SL_cond_inds_aNR[k*n_acc:(k+1)*n_acc]])/n_acc)
-        
-        # SF choices
+        if one_acc_per_cond:
+            if min_trials >= n_acc:
+                SL_perf_aR.append(np.count_nonzero(correct_perc[SL_cond_inds_aR])/SL_cond_inds_aR.shape[0])
+                SL_perf_aNR.append(np.count_nonzero(correct_perc[SL_cond_inds_aNR])/SL_cond_inds_aNR.shape[0])
+        else:
+            for k in range(min_trials//n_acc):
+                SL_perf_aR.append(np.count_nonzero(correct_perc[SL_cond_inds_aR[k*n_acc:(k+1)*n_acc]])/n_acc)
+                SL_perf_aNR.append(np.count_nonzero(correct_perc[SL_cond_inds_aNR[k*n_acc:(k+1)*n_acc]])/n_acc)
+    
+    # SF choices
+    if stim_cond=='change_chosen':
+        unique_changes, unique_changes_inv = np.unique(dsf, return_inverse=True)
+
+    for i in range(unique_changes.shape[0]):
+        if np.any(unique_changes[i]==0): # do not consider no change trials
+            continue
+        cond_inds = np.where(unique_changes_inv==i)[0]
         SF_cond_inds = np.intersect1d(cond_inds, SF_inds)
         SF_cond_inds_aR = np.intersect1d(SF_cond_inds, aR_inds)
         SF_cond_inds_aNR = np.intersect1d(SF_cond_inds, aNR_inds)
         min_trials = min(SF_cond_inds_aR.shape[0], SF_cond_inds_aNR.shape[0])
 
-        for k in range(min_trials//n_acc):
-            SF_perf_aR.append(np.count_nonzero(correct_perc[SF_cond_inds_aR[k*n_acc:(k+1)*n_acc]])/n_acc)
-            SF_perf_aNR.append(np.count_nonzero(correct_perc[SF_cond_inds_aNR[k*n_acc:(k+1)*n_acc]])/n_acc)
+        if one_acc_per_cond:
+            if min_trials >= n_acc:
+                SF_perf_aR.append(np.count_nonzero(correct_perc[SF_cond_inds_aR])/SF_cond_inds_aR.shape[0])
+                SF_perf_aNR.append(np.count_nonzero(correct_perc[SF_cond_inds_aNR])/SF_cond_inds_aNR.shape[0])
+        else:
+            for k in range(min_trials//n_acc):
+                SF_perf_aR.append(np.count_nonzero(correct_perc[SF_cond_inds_aR[k*n_acc:(k+1)*n_acc]])/n_acc)
+                SF_perf_aNR.append(np.count_nonzero(correct_perc[SF_cond_inds_aNR[k*n_acc:(k+1)*n_acc]])/n_acc)
     
     SL_perf_aR = np.array(SL_perf_aR)
     SL_perf_aNR = np.array(SL_perf_aNR)

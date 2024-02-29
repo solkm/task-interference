@@ -39,7 +39,8 @@ for i in range(len(data_paths_)):
 
     assert model_choices.shape[0] >= 10000, 'test set is too small'
     SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR, = \
-                    mf.perc_perf_same_stim(model_choices, trial_params, n_acc=50)
+        mf.perc_perf_same_stim(model_choices, trial_params, n_acc=50, 
+                               stim_cond='change_chosen', one_acc_per_cond=False)
     
     perf_aR, perf_aNR = mf.get_perc_acc_afterRvsNR(model_choices, trial_params)
 
@@ -49,13 +50,13 @@ for i in range(len(data_paths_)):
 
     # plot
     ax[i].plot(X, X, color='k', lw=1, ls='-', zorder=0)
-    ax[i].scatter(SL_perf_aR, SL_perf_aNR, s=dotsize, edgecolors='m', 
-                  facecolors='none', linewidths=lw, zorder=0, marker='o')
+    ax[i].scatter(SL_perf_aR, SL_perf_aNR, s=dotsize, facecolors='m', 
+                  linewidths=lw, zorder=0, marker='+')
     ax[i].scatter(SF_perf_aR, SF_perf_aNR, s=dotsize, edgecolors='cyan', 
                   facecolors='none', linewidths=lw, zorder=0, marker='o')
     ax[i].scatter(np.mean(SL_perf_aR), np.mean(SL_perf_aNR), s=dotsize*2, 
-                  marker='o', edgecolors='k', facecolors='m', linewidths=lw*1.2, 
-                  label='SL choice mean, p=%2.1e'%p_SL, alpha=0.9, zorder=1)
+                  marker='P', edgecolors='k', facecolors='m', linewidths=lw*1.2, 
+                  label='SL choice mean, p=%2.1e'%p_SL, alpha=0.9, zorder=2)
     ax[i].scatter(np.mean(SF_perf_aR), np.mean(SF_perf_aNR), s=dotsize*2, 
                   marker='o', edgecolors='k', facecolors='cyan', linewidths=lw*1.2, 
                   label='SF choice mean, p=%2.1e'%p_SF, alpha=0.9, zorder=1)
