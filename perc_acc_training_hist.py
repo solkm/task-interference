@@ -51,8 +51,8 @@ pAcc_aNR_sw  = mf.sliding_window_avg(pAcc_aNR_, n_avg, None)
 pAcc_diff_sw = mf.sliding_window_avg(pAcc_aR_ - pAcc_aNR_, n_avg, None)
 n_steps = pAcc_diff_sw.shape[1]
 
-np.savez(f'./{folder}/{name}_pAccDuringTraining_hist_sw{n_avg}.npz', 
-         pAcc_aR_sw=pAcc_aR_sw, pAcc_aNR_sw=pAcc_aNR_sw, pAcc_diff_sw=pAcc_diff_sw)
+#np.savez(f'./{folder}/{name}_pAccDuringTraining_hist_sw{n_avg}.npz', 
+#         pAcc_aR_sw=pAcc_aR_sw, pAcc_aNR_sw=pAcc_aNR_sw, pAcc_diff_sw=pAcc_diff_sw)
 
 #%% stacked subplots
 

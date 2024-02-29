@@ -14,7 +14,7 @@ tParams_new = pd.read_csv('./SimplifyData/tParams_new1.csv')
 K = 10
 K_trainable_inds = np.where(tParams_new[f'K{K}trainable']==1)[0]
 first_inds = K_trainable_inds[tParams_new.loc[K_trainable_inds-1, f'K{K}trainable']==0]
-np.random.seed(413)
+np.random.seed(413) # set seed
 train_first_inds = np.random.choice(first_inds, 140, replace=False)
 train_inds = np.zeros(0, dtype='int')
 for tfi in train_first_inds:

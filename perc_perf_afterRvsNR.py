@@ -5,12 +5,13 @@ Created on Mon Jan  8 18:09:52 2024
 
 @author: Sol
 """
-
+#%%
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
-from model_behavior_functions import perc_perf_same_stim
+import model_behavior_functions as mf
+import scipy.stats as st
 
 #%% side-by-side plot, two models
 
@@ -25,8 +26,8 @@ fig, ax = plt.subplots(1, 2, figsize=(12, 6), sharex=True, sharey=True)
 fontsize = 12
 rcParams['font.sans-serif'] = 'Helvetica'
 rcParams['font.size'] = fontsize
-dotsize=40
-lw=1
+dotsize = 40
+lw = 1
 X = np.linspace(0, 1, 100)
 
 for i in range(len(data_paths_)):
@@ -37,32 +38,45 @@ for i in range(len(data_paths_)):
     trial_params = pickle.load(open(data_path + '_trialparams.pickle', 'rb'))
 
     assert model_choices.shape[0] >= 10000, 'test set is too small'
-    dsl_perf_aR, dsl_perf_aNR, dsf_perf_aR, dsf_perf_aNR, p_dsl, p_dsf = \
-                    perc_perf_same_stim(trial_params, model_choices, n_acc=50)
+    SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR, = \
+                    mf.perc_perf_same_stim(model_choices, trial_params, n_acc=50)
+    
+    perf_aR, perf_aNR = mf.get_perc_acc_afterRvsNR(model_choices, trial_params)
+
+    # stats
+    stat_SL, p_SL = st.ranksums(SL_perf_aR, SL_perf_aNR)
+    stat_SF, p_SF = st.ranksums(SF_perf_aR, SF_perf_aNR)
 
     # plot
     ax[i].plot(X, X, color='k', lw=1, ls='-', zorder=0)
-    ax[i].scatter(dsl_perf_aR, dsl_perf_aNR, s=dotsize, facecolors='m', 
-                  linewidths=lw, zorder=1, marker='+')
-    ax[i].scatter(dsf_perf_aR, dsf_perf_aNR, s=dotsize, edgecolors='cyan', 
-                  facecolors='none', linewidths=lw, zorder=1, marker='o')
-    ax[i].scatter(np.mean(dsl_perf_aR), np.mean(dsl_perf_aNR), s=dotsize*2, 
-                  marker='P', edgecolors='k', facecolors='m', linewidths=lw*1.2, 
-                  label='SL choice mean, p=%2.1e'%p_dsl, alpha=0.9, zorder=3)
-    ax[i].scatter(np.mean(dsf_perf_aR), np.mean(dsf_perf_aNR), s=dotsize*2, 
+    ax[i].scatter(SL_perf_aR, SL_perf_aNR, s=dotsize, edgecolors='m', 
+                  facecolors='none', linewidths=lw, zorder=0, marker='o')
+    ax[i].scatter(SF_perf_aR, SF_perf_aNR, s=dotsize, edgecolors='cyan', 
+                  facecolors='none', linewidths=lw, zorder=0, marker='o')
+    ax[i].scatter(np.mean(SL_perf_aR), np.mean(SL_perf_aNR), s=dotsize*2, 
+                  marker='o', edgecolors='k', facecolors='m', linewidths=lw*1.2, 
+                  label='SL choice mean, p=%2.1e'%p_SL, alpha=0.9, zorder=1)
+    ax[i].scatter(np.mean(SF_perf_aR), np.mean(SF_perf_aNR), s=dotsize*2, 
                   marker='o', edgecolors='k', facecolors='cyan', linewidths=lw*1.2, 
-                  label='SF choice mean, p=%2.1e'%p_dsf, alpha=0.9, zorder=2)
+                  label='SF choice mean, p=%2.1e'%p_SF, alpha=0.9, zorder=1)
     ax[i].legend(loc='upper left', fontsize=fontsize-2)
     ax[i].set_title(names_[i], fontsize=fontsize)
     ax[i].set_xlim(left=0.15)
     ax[i].set_ylim(bottom=0.15)
     ax[i].set_aspect('equal')
 
-    print(names_[i])
-    print('SL, after R vs after NR', np.mean(dsl_perf_aR), np.mean(dsl_perf_aNR))
-    print('SF, after R vs after NR', np.mean(dsf_perf_aR), np.mean(dsf_perf_aNR))
-    print('performance difference, SL: ', np.mean(dsl_perf_aR)-np.mean(dsl_perf_aNR))
-    print('performance difference, SF: ',np.mean(dsf_perf_aR)-np.mean(dsf_perf_aNR))
+    print(names_[i] + ' perceptual performance')
+    print('across all conditions, after R vs after NR', 
+          np.round(perf_aR, 3), np.round(perf_aNR, 3))
+    print('difference: ', np.round(perf_aR - perf_aNR, 3))
+    print('SL mean, after R vs after NR', 
+          np.round(np.mean(SL_perf_aR), 3), np.round(np.mean(SL_perf_aNR), 3))
+    print('SF mean, after R vs after NR', 
+          np.round(np.mean(SF_perf_aR), 3), np.round(np.mean(SF_perf_aNR), 3))
+    print('SL mean difference: ', 
+          np.round(np.mean(SL_perf_aR)-np.mean(SL_perf_aNR), 3))
+    print('SF mean difference: ', 
+          np.round(np.mean(SF_perf_aR)-np.mean(SF_perf_aNR), 3))
 
 ax[0].set_xlabel('After a rewarded trial')
 ax[0].set_ylabel('After an unrewarded trial')
@@ -71,6 +85,6 @@ plt.tight_layout()
 
 rcParams['pdf.fonttype']=42
 rcParams['pdf.use14corefonts']=True
-plt.savefig(f'./{name1}_and_{name2}_perceptualaccuracyafterRvsNR.pdf', dpi=300, transparent=True)
+#plt.savefig(f'./{name1}_and_{name2}_perceptualaccuracyafterRvsNR.pdf', dpi=300, transparent=True)
 
 # %%

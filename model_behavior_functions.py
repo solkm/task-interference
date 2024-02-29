@@ -22,47 +22,47 @@ def get_tasks(choices):
 
     return tasks
 
-def get_overall_acc(model_choice, trial_params):
+def get_overall_acc(model_choices, trial_params):
 
     N_testbatch = trial_params.shape[0]
     correct_choice = [trial_params[i]['correct'][-1] for i in range(N_testbatch)]
-    accuracy = np.count_nonzero(correct_choice==model_choice)/N_testbatch
+    accuracy = np.count_nonzero(correct_choice==model_choices)/N_testbatch
 
     return accuracy
 
-def get_task_acc(model_choice, trial_params):
+def get_task_acc(model_choices, trial_params):
 
     N_testbatch = trial_params.shape[0]
     correct_task = [trial_params[i]['task'][-1] for i in range(N_testbatch)]
-    model_task = get_tasks(model_choice)
+    model_task = get_tasks(model_choices)
     task_acc = np.count_nonzero(correct_task==model_task)/N_testbatch
 
     return task_acc
 
-def get_monkeychoice_acc(model_choice, trial_params):
+def get_monkeychoice_acc(model_choices, trial_params):
     
     N_testbatch = trial_params.shape[0]
     monkey_choice = [trial_params[i]['choice'][-1] for i in range(N_testbatch)]
-    monkeychoice_acc = np.count_nonzero(monkey_choice==model_choice)/N_testbatch
+    monkeychoice_acc = np.count_nonzero(monkey_choice==model_choices)/N_testbatch
 
     return monkeychoice_acc
 
-def get_monkeytask_acc(model_choice, trial_params):
+def get_monkeytask_acc(model_choices, trial_params):
     
     N_testbatch = trial_params.shape[0]
     monkey_task = [trial_params[i]['m_task'][-1] for i in range(N_testbatch)]
-    model_task = get_tasks(model_choice)
+    model_task = get_tasks(model_choices)
     monkeytask_acc = np.count_nonzero(monkey_task==model_task)/N_testbatch
 
     return monkeytask_acc
 
-def get_perc_acc(model_choice, trial_params, dsl=None, dsf=None):
+def get_perc_acc(model_choices, trial_params, dsl=None, dsf=None):
     """
     Parameters
     ----------
     trial_params : array
         Trial parameters that the model was tested on.
-    model_choice : array
+    model_choices : array
         The model choices, from {1,2,3,4}.
     dsl, dsf : array, optional alternative to trial_params.
         
@@ -73,27 +73,104 @@ def get_perc_acc(model_choice, trial_params, dsl=None, dsf=None):
     p_acc : float
         Perceptual accuracy over all trials.
     """
+    N_testbatch = model_choices.shape[0]
+
     if trial_params is not None:
-        N_testbatch = trial_params.shape[0]
         dsl = [ trial_params[i]['dsl'][-1] for i in range(N_testbatch) ]
         dsf = [ trial_params[i]['dsf'][-1] for i in range(N_testbatch) ]
-    else:
-        N_testbatch = dsl.shape[0]
 
     correct_perc = np.zeros(N_testbatch)
     for i in range(N_testbatch):
-        if model_choice[i]==1 and dsf[i]>0:
+        if model_choices[i]==1 and dsf[i]>0: # SF increase
             correct_perc[i]=1
-        elif model_choice[i]==2 and dsf[i]<0:
+        elif model_choices[i]==2 and dsf[i]<0: # SF decrease
             correct_perc[i]=1
-        elif model_choice[i]==3 and dsl[i]<0:
+        elif model_choices[i]==3 and dsl[i]<0: # SL decrease
             correct_perc[i]=1
-        elif model_choice[i]==4 and dsl[i]>0:
+        elif model_choices[i]==4 and dsl[i]>0: # SL increase
             correct_perc[i]=1
 
     p_acc = np.count_nonzero(correct_perc)/N_testbatch
 
     return correct_perc, p_acc
+
+def get_perc_acc_afterRvsNR(model_choices, trial_params):
+    """
+    Perceptual accuracy after R vs after NR across all stimulus conditions
+    """
+    prev_choice = np.array([trial_params[i]['choice'][-2] for i in range(trial_params.shape[0])])
+    prev_correct = np.array([trial_params[i]['correct'][-2] for i in range(trial_params.shape[0])])
+    aR_inds = np.where(prev_choice==prev_correct)[0]
+    aNR_inds = np.where(prev_choice!=prev_correct)[0]
+    _, perf_aR = get_perc_acc(model_choices[aR_inds], trial_params[aR_inds])
+    _, perf_aNR = get_perc_acc(model_choices[aNR_inds], trial_params[aNR_inds])
+
+    return perf_aR, perf_aNR
+
+def perc_perf_same_stim(model_choices, trial_params, n_acc=50):
+    """
+    Computes perceptual performances after a reward vs. after a non-reward for the same stimulus condition.
+    A stimulus condition is defined by a unique pair of feature change values (rounded to 2 decimal places).
+
+    Parameters
+    ----------
+    trial_params : array
+        Trial parameters that the model was tested on.
+    model_choices : array
+        The model choices, from {1,2,3,4}.
+    n_acc : int
+       Number of trials from which to compute an accuracy.
+        
+    Returns
+    -------
+    SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR: arrays of perceptual accuracies.
+    """
+
+    assert 4>=model_choices.all()>=1, 'model choices are invalid'
+    N = len(trial_params[:])
+    dsl = np.round([trial_params[i]['dsl'][-1]*2 for i in range(N)], 2)
+    dsf = np.round([trial_params[i]['dsf'][-1]*2 for i in range(N)], 2)
+    feature_changes = np.vstack((dsl, dsf)).T
+    unique_changes, unique_changes_inv = np.unique(feature_changes, axis=0, return_inverse=True)
+    chosen_task = get_tasks(model_choices)
+    SL_inds = np.where(chosen_task==1)[0]
+    SF_inds = np.where(chosen_task==2)[0]
+    prev_choice = np.array([trial_params[i]['choice'][-2] for i in range(trial_params.shape[0])])
+    prev_correct = np.array([trial_params[i]['correct'][-2] for i in range(trial_params.shape[0])])
+    aR_inds = np.where(prev_choice==prev_correct)[0]
+    aNR_inds = np.where(prev_choice!=prev_correct)[0]
+    correct_perc, _ = get_perc_acc(model_choices, trial_params)
+
+    SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR = [], [], [], []
+    for i in range(unique_changes.shape[0]):
+        cond_inds = np.where(unique_changes_inv==i)[0]
+        
+        # SL choices
+        SL_cond_inds = np.intersect1d(cond_inds, SL_inds)
+        SL_cond_inds_aR = np.intersect1d(SL_cond_inds, aR_inds)
+        SL_cond_inds_aNR = np.intersect1d(SL_cond_inds, aNR_inds)
+        min_trials = min(SL_cond_inds_aR.shape[0], SL_cond_inds_aNR.shape[0])
+
+        for k in range(min_trials//n_acc):
+            SL_perf_aR.append(np.count_nonzero(correct_perc[SL_cond_inds_aR[k*n_acc:(k+1)*n_acc]])/n_acc)
+            SL_perf_aNR.append(np.count_nonzero(correct_perc[SL_cond_inds_aNR[k*n_acc:(k+1)*n_acc]])/n_acc)
+        
+        # SF choices
+        SF_cond_inds = np.intersect1d(cond_inds, SF_inds)
+        SF_cond_inds_aR = np.intersect1d(SF_cond_inds, aR_inds)
+        SF_cond_inds_aNR = np.intersect1d(SF_cond_inds, aNR_inds)
+        min_trials = min(SF_cond_inds_aR.shape[0], SF_cond_inds_aNR.shape[0])
+
+        for k in range(min_trials//n_acc):
+            SF_perf_aR.append(np.count_nonzero(correct_perc[SF_cond_inds_aR[k*n_acc:(k+1)*n_acc]])/n_acc)
+            SF_perf_aNR.append(np.count_nonzero(correct_perc[SF_cond_inds_aNR[k*n_acc:(k+1)*n_acc]])/n_acc)
+    
+    SL_perf_aR = np.array(SL_perf_aR)
+    SL_perf_aNR = np.array(SL_perf_aNR)
+    SF_perf_aR = np.array(SF_perf_aR)
+    SF_perf_aNR = np.array(SF_perf_aNR)
+
+    return SL_perf_aR, SL_perf_aNR, SF_perf_aR, SF_perf_aNR
 
 def sliding_window_avg(measure, n_avg, sem=None):
     """
@@ -112,74 +189,3 @@ def sliding_window_avg(measure, n_avg, sem=None):
             measure_sw[1, i] = np.std(measure[i:i+n_avg])/np.sqrt(n_avg)
 
     return measure_sw
-
-def perc_perf_same_stim(trial_params, model_choice, n_acc=50):
-    """
-    Computes perceptual performances for the same stimuli after a reward vs. after a non-reward.
-
-    Parameters
-    ----------
-    trial_params : array
-        Trial parameters that the model was tested on.
-    model_choice : array
-        The model choices, from {1,2,3,4}.
-    n_acc : int
-        Minimum number of trials from which to compute accuracies.
-        
-    Returns
-    -------
-    dsl_perf_aR : list
-    dsl_perf_aNR : list
-    dsf_perf_aR : list
-    dsf_perf_aNR : list
-    p_dsl : float
-    p_dsf : float
-    """
-
-    N = len(trial_params[:])
-    dsl = np.round([trial_params[i]['dsl'][-1]*2 for i in range(N)], 2)
-    dsf = np.round([trial_params[i]['dsf'][-1]*2 for i in range(N)], 2)
-    prevChoice = [trial_params[i]['choice'][-2] for i in range(N)]
-    prevCorrect = [trial_params[i]['correct'][-2] for i in range(N)]
-    assert 4>=model_choice.all()>=1, 'model choices are invalid'
-
-    def stim_perf(stim, stim_type = ''):
-        stim_unique, stim_unique_inv = np.unique(stim, return_inverse=True)
-        stim_perf_aR = []
-        stim_perf_aNR = []
-        
-        for i in range(len(stim_unique)):        
-            temp_aR = []
-            temp_aNR = []
-            if stim_unique[i] == 0: # do not consider zero stimulus change trials
-                continue
-            for j in range(len(stim_unique_inv)):
-                if stim_unique_inv[j] == i:
-
-                    correct_percep = None
-                    if stim_type == 'dsl':
-                        if model_choice[j]==3 or model_choice[j]==4:
-                            correct_percep = ((model_choice[j]==3)&(dsl[j]<0)) | ((model_choice[j]==4)&(dsl[j]>0))
-                    elif stim_type == 'dsf':
-                        if model_choice[j]==1 or model_choice[j]==2:
-                            correct_percep = ((model_choice[j]==1)&(dsf[j]>0)) | ((model_choice[j]==2)&(dsf[j]<0))
-
-                    if prevChoice[j] == prevCorrect[j] and correct_percep is not None:
-                        temp_aR.append(int(correct_percep))
-                    elif prevChoice[j] != prevCorrect[j] and correct_percep is not None:
-                        temp_aNR.append(int(correct_percep))
-            
-            if len(temp_aR) >= n_acc and len(temp_aNR) >= n_acc:
-                n = min(len(temp_aR)//n_acc, len(temp_aNR)//n_acc)
-                for k in range(n):
-                    stim_perf_aR.append(np.count_nonzero(temp_aR[k*n_acc:(k+1)*n_acc])/n_acc)
-                    stim_perf_aNR.append(np.count_nonzero(temp_aNR[k*n_acc:(k+1)*n_acc])/n_acc)
-            
-        return stim_perf_aR, stim_perf_aNR
-    
-    dsl_perf_aR, dsl_perf_aNR = stim_perf(dsl, stim_type='dsl')
-    dsf_perf_aR, dsf_perf_aNR = stim_perf(dsf, stim_type='dsf')
-    _, p_dsl, _ = ttest_ind(dsl_perf_aR, dsl_perf_aNR, alternative='larger')
-    _, p_dsf, _ = ttest_ind(dsf_perf_aR, dsf_perf_aNR, alternative='larger')
-    
-    return dsl_perf_aR, dsl_perf_aNR, dsf_perf_aR, dsf_perf_aNR, p_dsl, p_dsf

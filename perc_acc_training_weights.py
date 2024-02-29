@@ -18,13 +18,12 @@ vis_noise = 0.8
 mem_noise = 0.5
 rec_noise = 0.1
 K = 10
-N = 5000 # 2500
+N = 5000
 tParams_new = pd.read_csv('./data_inds/tParams_new.csv')
 aR_inds = np.load(open(f'./data_inds/K{K}trainable_aRinds.npy', 'rb'))
 aNR_inds = np.load(open(f'./data_inds/K{K}trainable_aNRinds.npy', 'rb'))
 
-seed = 56 # 5812
-np.random.seed(seed)
+np.random.seed(56) # set seed
 test_inds = np.concatenate((np.random.choice(aNR_inds, N, replace=False), 
                             np.random.choice(aR_inds, N, replace=False)))
 
