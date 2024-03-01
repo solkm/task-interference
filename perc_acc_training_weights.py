@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as st
 from matplotlib import rcParams
     
-#%% define function that returns perceptual accuracies as a dataframe
+# define function that returns perceptual accuracies as a dataframe
 
 N_rec = 200
 vis_noise = 0.8
@@ -23,7 +23,8 @@ tParams_new = pd.read_csv('./data_inds/tParams_new.csv')
 aR_inds = np.load(open(f'./data_inds/K{K}trainable_aRinds.npy', 'rb'))
 aNR_inds = np.load(open(f'./data_inds/K{K}trainable_aNRinds.npy', 'rb'))
 
-np.random.seed(56) # set seed
+seed = 56
+np.random.seed(seed) # set seed
 test_inds = np.concatenate((np.random.choice(aNR_inds, N, replace=False), 
                             np.random.choice(aR_inds, N, replace=False)))
 
@@ -36,6 +37,7 @@ def get_percAcc_training_df(task, folder, name):
     network_params['name'] = name
     network_params['N_rec'] = N_rec
     network_params['rec_noise'] = rec_noise
+
     test_inputs, _, _, trial_params = task.get_trial_batch()
 
     for tepochs in range(15, 1501, 15):
@@ -90,15 +92,17 @@ percAcc_training_df = get_percAcc_training_df(task, folder, name)
 
 percAcc_training_df.to_csv(f'./{folder}/{name}_percAccDuringTraining_monkeyhist_N{N}seed{seed}.csv', index=False)
 
-# %% plot a comparison of the two models (both monkey history inputs)
+#%% plot a comparison of the two models, both tested with monkey history inputs
+# optional sliding window averaging
 
 sliding_window = True
-n_avg = 10
+n_avg = 6
  
-Ns = [5000, 5000]
+Ns = [2500, 2500]
+seeds = [5812, 5812]
 colors = ['darkblue', 'darkorange']
-dfs = [pd.read_csv(f'./correct_choice_model/SH2_correctA_percAccDuringTraining_monkeyhist_N{Ns[0]}seed56.csv'), 
-       pd.read_csv(f'./monkey_choice_model/MM1_monkeyB_percAccDuringTraining_N{Ns[1]}seed56.csv')]
+dfs = [pd.read_csv(f'./correct_choice_model/SH2_correctA_percAccDuringTraining_monkeyhist_N{Ns[0]}seed{seeds[0]}.csv'), 
+       pd.read_csv(f'./monkey_choice_model/MM1_monkeyB_percAccDuringTraining_N{Ns[1]}seed{seeds[1]}.csv')]
 
 for i in range(len(dfs)):
 
@@ -134,6 +138,7 @@ for i in range(len(dfs)):
     plt.tight_layout()
 
 # %% comparison with correct choice model calculated directly from its training history
+# with sliding window averaging
     
 sw1 = 100
 diff1 = np.load(open(f'./correct_choice_model/SH2_correctA_percAccDuringTraining_hist_sw{sw1}.npz', 'rb'))
@@ -148,7 +153,7 @@ plt.fill_between(epochs1, diff1[0]-t1*diff1[1], diff1[0]+t1*diff1[1],
                  alpha=0.2, color='darkblue', edgecolor='none')
 
 sw2 = 6
-df2 = pd.read_csv(f'./monkey_choice_model/MM1_monkeyB_percAccDuringTraining_N2500seed5812.csv')
+df2 = pd.read_csv(f'./monkey_choice_model/MM1_monkeyB_percAccDuringTraining_N5000seed56.csv')
 pAcc_aR = 0.5*(df2['SL_pAcc_aR'] + df2['SF_pAcc_aR'])
 pAcc_aNR = 0.5*(df2['SL_pAcc_aNR'] + df2['SF_pAcc_aNR'])
 diff = pAcc_aR - pAcc_aNR
