@@ -17,13 +17,15 @@ import scipy.stats as st
 
 name1 = 'MM1_monkeyB1245'
 data_path1 = f'./monkey_choice_model/test_data/{name1}_allinds_noisevis0.8mem0.5rec0.1'
+#data_path1 = f'./monkey_choice_model/test_data/{name1}_forpercperfsamestim_changeboth196condsN200_noisevis0.8mem0.5rec0.1'
 name2 = 'SH2_correctA'
 data_path2 = f'./correct_choice_model/test_data/{name2}_monkeyhist_allinds_noisevis0.8mem0.5rec0.1'
+#data_path2 = f'./correct_choice_model/test_data/{name2}_forpercperfsamestim_changeboth196condsN200_noisevis0.8mem0.5rec0.1'
 data_paths_ = [data_path1, data_path2]
 names_ = [name1, name2]
 
 stim_cond = 'change_both' # 'change_chosen' # 
-n_acc = 20
+n_acc = 50
 one_acc_per_cond = True
 
 plot = True
@@ -43,6 +45,7 @@ for i in range(len(data_paths_)):
     data_path = data_paths_[i]
     model_output = pickle.load(open(data_path + '_modeloutput.pickle', 'rb'))
     model_choices = np.argmax(model_output[:, -1, 2:6], axis=1) + 1
+    #model_choices = pickle.load(open(data_path + '_modelchoices.pickle', 'rb'))
     trial_params = pickle.load(open(data_path + '_trialparams.pickle', 'rb'))
 
     assert model_choices.shape[0] >= 10000, 'test set is too small'
@@ -52,14 +55,14 @@ for i in range(len(data_paths_)):
     
     perf_aR, perf_aNR = mf.get_perc_acc_afterRvsNR(model_choices, trial_params)
 
+    # stats
+    stat_SL, p_SL = st.wilcoxon(SL_perf_aR, SL_perf_aNR) # Wilcoxon signed-rank test
+    stat_SF, p_SF = st.wilcoxon(SF_perf_aR, SF_perf_aNR)
+
     ppss_dicts.append({'SL_perf_aR': SL_perf_aR, 'SL_perf_aNR': SL_perf_aNR,
                         'SF_perf_aR': SF_perf_aR, 'SF_perf_aNR': SF_perf_aNR,
                         'SL_conds': SL_conds, 'SF_conds': SF_conds,
                         'perf_aR': perf_aR, 'perf_aNR': perf_aNR})
-
-    # stats
-    stat_SL, p_SL = st.ranksums(SL_perf_aR, SL_perf_aNR)
-    stat_SF, p_SF = st.ranksums(SF_perf_aR, SF_perf_aNR)
 
     # plot
     if plot:
@@ -76,12 +79,10 @@ for i in range(len(data_paths_)):
                     label='SF choice mean, p=%2.1e'%p_SF, alpha=0.9, zorder=1)
         ax[i].legend(loc='upper left', fontsize=fontsize-1)
         ax[i].set_title(names_[i], fontsize=fontsize)
-        ax[i].set_xlim(left=0.15)
-        ax[i].set_ylim(bottom=0.15)
         ax[i].set_aspect('equal')
 
     print(names_[i] + ' perceptual performance')
-    print(stim_cond, ', n_acc=', n_acc, ', one_acc_per_cond=', one_acc_per_cond)
+    print(stim_cond, ', n_acc =', n_acc, ', one_acc_per_cond =', one_acc_per_cond)
     print('across all conditions, after R vs after NR', 
           np.round(perf_aR, 3), np.round(perf_aNR, 3))
     print('difference: ', np.round(perf_aR - perf_aNR, 3))
@@ -130,4 +131,11 @@ ax.set_xlabel('dSL')
 ax.set_ylabel('dSF')
 ax.set_zlabel('SF perc acc difference')
 
+# %% dsf and dsl distributions in the training data?
+
+dsl = np.round([trial_params[i]['dsl'][-1] for i in range(len(trial_params))], 2)
+dsf = np.round([trial_params[i]['dsf'][-1] for i in range(len(trial_params))], 2)
+
+plt.hist(dsl, bins=20, alpha=0.5, label='dsl')
+plt.hist(dsf, bins=20, alpha=0.5, label='dsf')
 # %%

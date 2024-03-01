@@ -13,7 +13,7 @@ import pickle
 import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import pandas as pd
-from scipy.stats import ttest_ind, ttest_rel
+import scipy.stats as st
 #%%
 name1 = 'SH2_correctA'
 folder1 = 'correct_choice_model/test_data'
@@ -80,9 +80,9 @@ for i in range(outputs2.shape[0]):
 
 RTdiff = RT2 - RT1
 
-_, p_rel_aNR = ttest_rel(RT2[prevErr], RT1[prevErr])
-_, p_rel_aR = ttest_rel(RT2[prevErr==False], RT1[prevErr==False])
-_, p_diff_aRvsNR = ttest_ind(RTdiff[prevErr], RTdiff[prevErr==False])
+_, p_rel_aNR = st.wilcoxon(RT2[prevErr], RT1[prevErr])
+_, p_rel_aR = st.wilcoxon(RT2[prevErr==False], RT1[prevErr==False])
+_, p_diff_aRvsNR = st.ranksums(RTdiff[prevErr], RTdiff[prevErr==False])
 print('pairwise aNR: p=', p_rel_aNR)
 print('pairwise aR: p=', p_rel_aR)
 print('aR vs aNR differences: p=', p_diff_aRvsNR)

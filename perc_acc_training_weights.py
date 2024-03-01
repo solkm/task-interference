@@ -106,11 +106,12 @@ plt.plot(epochs1, diff1[0], color='darkblue', label='correct choice model')
 plt.fill_between(epochs1, diff1[0]-t1*diff1[1], diff1[0]+t1*diff1[1],
                  alpha=0.2, color='darkblue', edgecolor='none')
 
-CI_or_trace = 'CI' # 'CI' or 'trace'
+CI_or_trace = 'trace' # 'CI' or 'trace'
 sw2 = 6
-N = 5000
-seed = 56
-df2 = pd.read_csv(f'./monkey_choice_model/MM1_monkeyB_percAccDuringTraining_N{N}seed{seed}.csv')
+N = 2500 #5000 #2000
+seed = 5812 #56 #23
+redraw = False # True
+df2 = pd.read_csv(f'./monkey_choice_model/MM1_monkeyB_percAccDuringTraining_N{N}seed{seed}_redraw{redraw}.csv')
 
 SL_pAcc_aR, SL_pAcc_aNR = df2['SL_pAcc_aR'], df2['SL_pAcc_aNR']
 SF_pAcc_aR, SF_pAcc_aNR = df2['SF_pAcc_aR'], df2['SF_pAcc_aNR']
