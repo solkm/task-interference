@@ -15,18 +15,26 @@ import scipy.stats as st
 
 #%% side-by-side plot, two models
 
+dataset = 'allinds' # 'allinds' or 'forppss'
+
 name1 = 'MM1_monkeyB1245'
-data_path1 = f'./monkey_choice_model/test_data/{name1}_allinds_noisevis0.8mem0.5rec0.1'
-#data_path1 = f'./monkey_choice_model/test_data/{name1}_forpercperfsamestim_changeboth196condsN200_noisevis0.8mem0.5rec0.1'
+folder1 = 'monkey_choice_model/test_data'
 name2 = 'SH2_correctA'
-data_path2 = f'./correct_choice_model/test_data/{name2}_monkeyhist_allinds_noisevis0.8mem0.5rec0.1'
-#data_path2 = f'./correct_choice_model/test_data/{name2}_forpercperfsamestim_changeboth196condsN200_noisevis0.8mem0.5rec0.1'
+folder2 = 'correct_choice_model/test_data'
+
+if dataset == 'allinds':
+    data_path1 = f'./{folder1}/{name1}_allinds_noisevis0.8mem0.5rec0.1'
+    data_path2 = f'./{folder2}/{name2}_monkeyhist_allinds_noisevis0.8mem0.5rec0.1'
+elif dataset == 'forppss':
+    data_path1 = f'./{folder1}/{name1}_forppss_changeboth196condsN40ff[2.1, 2.3, 2.5, 2.7, 2.9]_noisevis0.8mem0.5rec0.1'
+    data_path2 = f'./{folder2}/{name2}_forppss_changeboth196condsN40ff[2.1, 2.3, 2.5, 2.7, 2.9]_noisevis0.8mem0.5rec0.1'
+
 data_paths_ = [data_path1, data_path2]
 names_ = [name1, name2]
 
-stim_cond = 'change_both' # 'change_chosen' # 
+stim_cond = 'change_both' # 'change_chosen' or 'change_both'
 n_acc = 50
-one_acc_per_cond = True
+one_acc_per_cond = False
 
 plot = True
 if plot:
@@ -43,10 +51,12 @@ ppss_dicts = []
 for i in range(len(data_paths_)):
 
     data_path = data_paths_[i]
-    model_output = pickle.load(open(data_path + '_modeloutput.pickle', 'rb'))
-    model_choices = np.argmax(model_output[:, -1, 2:6], axis=1) + 1
-    #model_choices = pickle.load(open(data_path + '_modelchoices.pickle', 'rb'))
     trial_params = pickle.load(open(data_path + '_trialparams.pickle', 'rb'))
+    if dataset == 'allinds':
+        model_output = pickle.load(open(data_path + '_modeloutput.pickle', 'rb'))
+        model_choices = np.argmax(model_output[:, -1, 2:6], axis=1) + 1
+    elif dataset == 'forppss':
+        model_choices = pickle.load(open(data_path + '_modelchoices.pickle', 'rb'))
 
     assert model_choices.shape[0] >= 10000, 'test set is too small'
     SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR, SL_conds, SF_conds = \
@@ -103,7 +113,7 @@ if plot:
 
     rcParams['pdf.fonttype']=42
     rcParams['pdf.use14corefonts']=True
-    #plt.savefig(f'./{name1}_and_{name2}_perceptualaccuracyafterRvsNR.pdf', dpi=300, transparent=True)
+    #plt.savefig(f'./{name1}_and_{name2}_perceptualaccuracyafterRvsNR_{stim_cond}_{n_acc}{one_acc_per_cond}_{dataset}.pdf', dpi=300, transparent=True)
 
 # %% visualize which conditions lead to the biggest differences
 
@@ -136,6 +146,7 @@ ax.set_zlabel('SF perc acc difference')
 dsl = np.round([trial_params[i]['dsl'][-1] for i in range(len(trial_params))], 2)
 dsf = np.round([trial_params[i]['dsf'][-1] for i in range(len(trial_params))], 2)
 
-plt.hist(dsl, bins=20, alpha=0.5, label='dsl')
-plt.hist(dsf, bins=20, alpha=0.5, label='dsf')
+plt.figure()
+plt.hist(dsl, bins=50, alpha=0.5, label='dsl')
+plt.hist(dsf, bins=50, alpha=0.5, label='dsf')
 # %%
