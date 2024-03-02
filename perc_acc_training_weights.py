@@ -100,17 +100,18 @@ diff1 = diff1['pAcc_diff_sw']
 epochs1 = np.arange(0, 1500-sw1) + sw1/2
 t1 = st.t.ppf(q=0.975, df=sw1-1)
 
+plt.figure()
 plt.hlines(0, 0, 1500, colors='k', ls='--')
 plt.hlines(0.0506, 0, 1500, color='grey', lw=1.5, ls='--', label='monkeys')
 plt.plot(epochs1, diff1[0], color='darkblue', label='correct choice model')
 plt.fill_between(epochs1, diff1[0]-t1*diff1[1], diff1[0]+t1*diff1[1],
                  alpha=0.2, color='darkblue', edgecolor='none')
 
-CI_or_trace = 'trace' # 'CI' or 'trace'
+CI_or_trace = 'CI' # 'CI' or 'trace'
 sw2 = 6
-N = 2500 #5000 #2000
-seed = 5812 #56 #23
-redraw = False # True
+N = 2000 # 2500 # 5000 # 
+seed = 23 # 5812 # 56 #
+redraw = True # False # 
 df2 = pd.read_csv(f'./monkey_choice_model/MM1_monkeyB_percAccDuringTraining_N{N}seed{seed}_redraw{redraw}.csv')
 
 SL_pAcc_aR, SL_pAcc_aNR = df2['SL_pAcc_aR'], df2['SL_pAcc_aNR']
@@ -132,15 +133,14 @@ else:
 
 plt.plot(epochs2, diff2[0], color='darkorange', label='monkey choice model')
 
-
 plt.legend()
 plt.xlabel('Training epochs')
 plt.ylabel('Perceptual accuracy difference')
 plt.tight_layout()
 
-rcParams['pdf.fonttype']=42
-rcParams['pdf.use14corefonts']=True
-#plt.savefig(f'./SH2_correctA_pAccHist_sw{sw1}_vs_MM1_monkeyB_N2500seed5812sw{sw2}.pdf', dpi=300, transparent=True)
+rcParams['pdf.fonttype'] = 42
+rcParams['pdf.use14corefonts'] = True
+#plt.savefig(f'./SH2_correctA_pAccHist_sw{sw1}_vs_MM1_monkeyB_N{N}seed{seed}redraw{redraw}sw{sw2}.pdf', dpi=300, transparent=True)
 
 #%% get correct choice model df (monkey history inputs)
 

@@ -126,13 +126,13 @@ plt.plot(np.arange(0.45, 0.71, 0.05), np.arange(0.45, 0.71, 0.05), c='k', lw=1)
 
 plt.scatter(mod1SL_SFaR[:, tp], mod1SL_SFaNR[:, tp], c='orange', 
             label=f'{mod1_name}', alpha=0.6, lw=2, zorder=1)
-tstat_mod1, pval_mod1 = st.ttest_rel(mod1SL_SFaR[:, tp], mod1SL_SFaNR[:, tp])
+stat_mod1, pval_mod1 = st.wilcoxon(mod1SL_SFaR[:, tp], mod1SL_SFaNR[:, tp])
 plt.scatter(np.mean(mod1SL_SFaR[:, tp]), np.mean(mod1SL_SFaNR[:, tp]), c='orange', 
             edgecolor='k', label=f'mean, p={pval_mod1:3.2e}', lw=2, zorder=1)
 
 plt.scatter(mod2SL_SFaR[:, tp], mod2SL_SFaNR[:, tp], marker='s', c='dodgerblue', 
             label=f'{mod2_name}', alpha=0.4, lw=2, zorder=0)
-tstat_mod2, pval_mod2 = st.ttest_rel(mod2SL_SFaR[:, tp], mod2SL_SFaNR[:, tp])
+stat_mod2, pval_mod2 = st.wilcoxon(mod2SL_SFaR[:, tp], mod2SL_SFaNR[:, tp])
 plt.scatter(np.mean(mod2SL_SFaR[:, tp]), np.mean(mod2SL_SFaNR[:, tp]), c='dodgerblue', 
             marker='s', edgecolor='k', label=f'mean, p={pval_mod2:3.2e}', lw=2, zorder=0)
 

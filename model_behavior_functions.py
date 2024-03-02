@@ -134,7 +134,7 @@ def perc_perf_same_stim(model_choices, trial_params, n_acc=50,
 
     assert 4>=model_choices.all()>=1, 'model choices are invalid'
     N = len(trial_params[:])
-    dsl = np.round([trial_params[i]['dsl'][-1] for i in range(N)], 2)
+    dsl = np.round([trial_params[i]['dsl'][-1] for i in range(N)], 2) # round feature change amounts to 2 decimal places
     dsf = np.round([trial_params[i]['dsf'][-1] for i in range(N)], 2)
     chosen_task = get_tasks(model_choices)
     SL_inds = np.where(chosen_task==1)[0]

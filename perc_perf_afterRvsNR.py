@@ -89,6 +89,8 @@ for i in range(len(data_paths_)):
                     label='SF choice mean, p=%2.1e'%p_SF, alpha=0.9, zorder=1)
         ax[i].legend(loc='upper left', fontsize=fontsize-1)
         ax[i].set_title(names_[i], fontsize=fontsize)
+        ax[i].set_xlim(0.14, 1.05)
+        ax[i].set_ylim(0.14, 1.05)
         ax[i].set_aspect('equal')
 
     print(names_[i] + ' perceptual performance')
@@ -113,7 +115,7 @@ if plot:
 
     rcParams['pdf.fonttype']=42
     rcParams['pdf.use14corefonts']=True
-    #plt.savefig(f'./{name1}_and_{name2}_perceptualaccuracyafterRvsNR_{stim_cond}_{n_acc}{one_acc_per_cond}_{dataset}.pdf', dpi=300, transparent=True)
+    plt.savefig(f'./{name1}_and_{name2}_perceptualaccuracyafterRvsNR_{stim_cond}_{n_acc}{one_acc_per_cond}_{dataset}.pdf', dpi=300, transparent=True)
 
 # %% visualize which conditions lead to the biggest differences
 
