@@ -56,7 +56,6 @@ def generate_data(dSLs, dSFs, task, weights_path, N, ff=[2.5]):
     return model_choices_all, trial_params_all
 
 #%% monkey choice model
-
 name = 'MM1_monkeyB1245'
 folder = 'monkey_choice_model'
 weights_path = f'./{folder}/weights/{name}.npz'
@@ -72,7 +71,6 @@ task = Task_MM1(vis_noise=vis_noise, mem_noise=mem_noise, N_batch=2*N,
 model_choices_all, trial_params_all = generate_data(dSLs, dSFs, task, weights_path, N, ff=ff)
 
 #%% correct choice model
-
 name = 'SH2_correctA'
 folder = 'correct_choice_model'
 weights_path = f'./{folder}/weights/{name}.npz'
@@ -88,7 +86,6 @@ task = Task_SH2(vis_noise=vis_noise, mem_noise=mem_noise, N_batch=2*N,
 model_choices_all, trial_params_all = generate_data(dSLs, dSFs, task, weights_path, N, ff=ff)
 
 #%% Save as .pickle
-
 savename = f'./{folder}/test_data/{name}_forppss_changeboth196condsN{N}ff{ff}_noisevis{vis_noise}mem{mem_noise}rec{rec_noise}'
 
 savefile = open(savename+'_modelchoices.pickle','wb')

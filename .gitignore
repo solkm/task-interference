@@ -1,3 +1,7 @@
+# Large data files
+*.pickle
+*.mat
+
 # OS generated files
 .DS_Store
 .DS_Store?

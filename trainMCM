@@ -1,5 +1,7 @@
-from self_history import RNN_SH2, Task_SH2
+from monkey_model import Task_MM1
+from psychrnn.backend.models.basic import Basic
 import numpy as np
+from matplotlib import rcParams
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -18,15 +20,14 @@ for tfi in train_first_inds:
     else:
         fi_range = np.arange(tfi, K_trainable_inds[-1]+1)
     train_inds = np.append(train_inds, np.intersect1d(fi_range, K_trainable_inds))
-
+    
 #%% TRAIN
 N_rec = 200
 vis_noise = 0.8
 mem_noise = 0.5
 rec_noise = 0.1
-name = 'SH2_correctA'
-folder = 'correct_choice_model'
-targCorrect = True
+name = 'MM1_monkeyB'
+folder = 'monkey_choice_model'
 
 # bioconstraints:
 autaupses = False
@@ -40,8 +41,8 @@ train_iters = 300000
 N_trainbatch = 200
 learn_rate = 0.003
 
-task = Task_SH2(vis_noise=vis_noise, mem_noise=mem_noise, N_batch=N_trainbatch, 
-                K=K, dat=tParams_new, dat_inds=train_inds, targCorrect=targCorrect)
+task = Task_MM1(vis_noise=vis_noise, mem_noise=mem_noise, N_batch=N_trainbatch, 
+                K=K, dat=tParams_new, dat_inds=train_inds)
 
 network_params = task.get_task_params()
 network_params['name'] = name
@@ -70,7 +71,7 @@ network_params['output_connectivity'] = output_connectivity
 
 #network_params['load_weights_path'] = 'INSERT_PATH' # If continuing to train a model, load its weights
 
-model = RNN_SH2(network_params)
+model = Basic(network_params)
 
 # Define training parameters
 train_params = {}
@@ -78,15 +79,14 @@ train_params['training_iters'] = train_iters
 train_params['learning_rate'] = learn_rate
 
 # Save weights during training
-train_params['training_weights_path'] = f'./{folder}/weights/{name}'
+train_params['training_weights_path'] = f'./{folder}/weights/{name}' 
 train_params['loss_epoch'] = 5
 train_params['save_training_weights_epoch'] = 15
 
-hist, losses, trainTime, initTime = model.train(task, train_params)
+losses, trainTime, initTime = model.train(task, train_params)
 print('initialization time: ', initTime, 'training time: ',trainTime)
 
 np.save(f'./{folder}/{name}_loss', np.array(losses))
-np.savez(f'./{folder}/{name}_history', **hist)
 np.save(f'./{folder}/{name}_train_inds', train_inds)
 
 # plot loss
