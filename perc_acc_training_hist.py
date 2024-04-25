@@ -8,6 +8,7 @@ from matplotlib import rcParams
 import matplotlib.pyplot as plt
 import scipy.stats as st
 import model_behavior_functions as mf
+import plotting_functions as pf
 
 #%% calculate perceptual accuracy, 1 datapoint per epoch
 
@@ -46,9 +47,9 @@ pAcc_aNR_ = np.array(percAcc_training['pAcc_aNR'])
 #%% sliding window average over epochs
 
 n_avg = 100
-pAcc_aR_sw = mf.sliding_window_avg(pAcc_aR_, n_avg, None)
-pAcc_aNR_sw  = mf.sliding_window_avg(pAcc_aNR_, n_avg, None)
-pAcc_diff_sw = mf.sliding_window_avg(pAcc_aR_ - pAcc_aNR_, n_avg, None)
+pAcc_aR_sw = pf.sliding_window_avg(pAcc_aR_, n_avg, None)
+pAcc_aNR_sw  = pf.sliding_window_avg(pAcc_aNR_, n_avg, None)
+pAcc_diff_sw = pf.sliding_window_avg(pAcc_aR_ - pAcc_aNR_, n_avg, None)
 n_steps = pAcc_diff_sw.shape[1]
 
 #np.savez(f'./{folder}/{name}_pAccDuringTraining_hist_sw{n_avg}.npz', 

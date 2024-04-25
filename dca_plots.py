@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams
 import os
 import scipy.stats as st
+from plotting_functions import set_violin_color
 os.chdir('/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject/task-interference')
 
 def angles_0to90(a):
@@ -137,16 +138,6 @@ _, p_aR1_aNR2 = st.ranksums(np.abs(proj1[aR_inds, tpt]), np.abs(proj2[aNR_inds, 
 print('aR monkey vs aNR correct: p=%4.3e'%p_aR1_aNR2)
 
 #%% projection vs time violin plots with median: both models, only aNR
-
-def set_violin_color(vplots, color, alpha=0.1):
-    for key in vplots.keys():
-        if key == 'bodies':
-            for v in vplots[key]:
-                v.set_edgecolor(color)
-                v.set_facecolor(color)
-                v.set_alpha(alpha)
-        else:
-            vplots[key].set_color(color)
 
 colors = ['orangered', 'darkblue']
 ms = 12

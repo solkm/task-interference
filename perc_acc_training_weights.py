@@ -5,6 +5,7 @@ from monkey_model import Task_MM1
 from self_history import Task_SH2
 from psychrnn.backend.simulation import BasicSimulator
 import model_behavior_functions as mf
+import plotting_functions as pf
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -120,7 +121,7 @@ pAcc_aR = 0.5*(SL_pAcc_aR + SF_pAcc_aR)
 pAcc_aNR = 0.5*(SL_pAcc_aNR + SF_pAcc_aNR)
 diff = pAcc_aR - pAcc_aNR
 
-diff2 = mf.sliding_window_avg(diff, sw2, sem=None)
+diff2 = pf.sliding_window_avg(diff, sw2, sem=None)
 epochs2 = (np.arange(1, 101-sw2) + sw2/2)*15
 
 # plot raw data or CI and sliding window average
@@ -180,7 +181,7 @@ for i in range(len(dfs)):
     sem = np.sqrt((percAccs_aR_var + percAccs_aNR_var)/Ns[i])
 
     if sliding_window:
-        diffs_sw = mf.sliding_window_avg(diffs, n_avg, sem=sem) # sem=sem or None
+        diffs_sw = pf.sliding_window_avg(diffs, n_avg, sem=sem) # sem=sem or None
         diffs = diffs_sw[0]
         sem = diffs_sw[1]
 
