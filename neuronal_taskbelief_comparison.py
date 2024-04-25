@@ -28,32 +28,70 @@ mod2_og_inds = np.array(tParams_new.loc[mod2_trial_inds, 'og_ind'], dtype=int)
 mod1_SLtaskout = mod1_outputs[..., 0]
 mod1_SFtaskout = mod1_outputs[..., 1]
 mod1_taskout_diff = mod1_SLtaskout - mod1_SFtaskout
-
-f, ax = plt.subplots(1, 3, figsize=(16, 4))
-ax[0].hist(mod1_SLtaskout[:, -1], bins=20, density=True, label='SL', histtype='step')
-ax[0].hist(mod1_SFtaskout[:, -1], bins=20, density=True, label='SF', histtype='step')
-ax[0].set(xlabel='Task output', ylabel='Density')
-ax[0].legend()
-
-ax[1].hist(mod1_taskout_diff[:, -1], bins=20, density=True)
-ax[1].set(xlabel='Sum of task outputs')
-
-ax[2].hist(mod1_SLtaskout[:, -1] - mod1_SFtaskout[:, -1], bins=20, density=True)
-ax[2].set(xlabel='Difference of task outputs (SL - SF)')
-
+mod1_taskout_sum = mod1_SLtaskout + mod1_SFtaskout
 mod2_SLtaskout = mod2_outputs[..., 0]
 mod2_SFtaskout = mod2_outputs[..., 1]
 mod2_taskout_diff = mod2_SLtaskout - mod2_SFtaskout
+mod2_taskout_sum = mod2_SLtaskout + mod2_SFtaskout
 
-# %% Scatterplot of model task outputs difference vs monkey neuronal task belief
+f = plt.figure(figsize=(16, 8))
+ax00 = f.add_subplot(2, 3, 1)
+ax01 = f.add_subplot(2, 3, 2)
+ax02 = f.add_subplot(2, 3, 3)
+ax10 = f.add_subplot(2, 3, 4, sharex=ax00, sharey=ax00)
+ax11 = f.add_subplot(2, 3, 5, sharex=ax01, sharey=ax01 )
+ax12 = f.add_subplot(2, 3, 6, sharex=ax02, sharey=ax02)
+
+ax00.hist(mod1_SLtaskout[:, -1], bins=20, density=True, label='SL', histtype='step')
+ax00.hist(mod1_SFtaskout[:, -1], bins=20, density=True, label='SF', histtype='step')
+ax00.set(ylabel=f'{mod1_name}\nDensity')
+ax00.legend()
+
+ax01.hist(mod1_taskout_sum[:, -1], bins=20, density=True)
+ax02.hist(mod1_taskout_diff[:, -1], bins=20, density=True)
+
+ax10.hist(mod2_SLtaskout[:, -1], bins=20, density=True, label='SL', histtype='step')
+ax10.hist(mod2_SFtaskout[:, -1], bins=20, density=True, label='SF', histtype='step')
+ax10.set(xlabel='Task output', ylabel=f'{mod2_name}\nDensity')
+ax10.legend()
+
+ax11.hist(mod2_taskout_sum[:, -1], bins=20, density=True)
+ax11.set(xlabel='Sum of task outputs')
+ax12.hist(mod2_taskout_diff[:, -1], bins=20, density=True)
+ax12.set(xlabel='Difference of task outputs (SL - SF)')
+
+plt.tight_layout()
+# %% Compare model task outputs with monkey neuronal (7a) task belief
 og_inds_both = np.intersect1d(mod1_og_inds, tParams_ndist['og_ind'])
 mod1_inds2plot = np.where(np.isin(mod1_og_inds, og_inds_both))[0]
 tParams_inds2plot = np.where(np.isin(tParams_ndist['og_ind'], og_inds_both))[0]
 assert np.array_equal(mod1_og_inds[mod1_inds2plot], tParams_ndist['og_ind'][tParams_inds2plot])
-
 assert np.array_equal(mod1_og_inds, mod2_og_inds)
-assert np.array_equal(mod2_og_inds[mod1_inds2plot], tParams_ndist['og_ind'][tParams_inds2plot])
 
+# Binned violin plot
+bins = np.array([-0.7, 0, 0.7])
+mod1_taskout_diff_dig = np.digitize(mod1_taskout_diff[mod1_inds2plot, -1], bins)
+mod2_taskout_diff_dig = np.digitize(mod2_taskout_diff[mod1_inds2plot, -1], bins)
+assert np.array_equal(np.unique(mod1_taskout_diff_dig), np.unique(mod2_taskout_diff_dig))
+n_bins = np.unique(mod1_taskout_diff_dig).shape[0]
+
+f, ax = plt.subplots(2, 1, figsize=(5, 10), sharex=True, sharey=True)
+for i in range(n_bins):
+    inds1 = np.where(mod1_taskout_diff_dig == i)[0]
+    ax[0].violinplot(tParams_ndist['nd_task'][tParams_inds2plot[inds1]], 
+                     positions=[i], widths=0.5, showmeans=True, showextrema=False)
+    inds2 = np.where(mod2_taskout_diff_dig == i)[0]
+    ax[1].violinplot(tParams_ndist['nd_task'][tParams_inds2plot[inds2]], 
+                     positions=[i], widths=0.5, showmeans=True, showextrema=False)
+
+# %% More plots
+# Histogram of monkey neuronal task belief
+plt.figure()
+plt.hist(tParams_ndist['nd_task'][tParams_inds2plot], bins=50, density=True)
+plt.xlabel('Monkey normalized neuronal task belief')
+plt.ylabel('Density')
+
+# Scatterplot of monkey neuronal task belief vs model task outputs difference
 f, ax = plt.subplots(2, 1, figsize=(5, 10), sharex=True, sharey=True)
 ax[0].scatter(mod1_taskout_diff[mod1_inds2plot, -1], tParams_ndist['nd_task'][tParams_inds2plot],
             s=5, alpha=0.2)
@@ -62,5 +100,3 @@ ax[1].scatter(mod2_taskout_diff[mod1_inds2plot, -1], tParams_ndist['nd_task'][tP
 ax[0].set(xlabel=f'{mod1_name} task output difference (SL - SF)', 
           ylabel='Monkey normalized neuronal task belief')
 ax[1].set(xlabel=f'{mod2_name} task output difference (SL - SF)')
-
-# %%
