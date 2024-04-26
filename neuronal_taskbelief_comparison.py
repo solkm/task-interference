@@ -61,6 +61,7 @@ ax12.hist(mod2_taskout_diff[:, -1], bins=20, density=True)
 ax12.set(xlabel='Difference of task outputs (SL - SF)')
 
 plt.tight_layout()
+
 # %% Compare model task outputs with monkey neuronal (7a) task belief
 og_inds_both = np.intersect1d(mod1_og_inds, tParams_ndist['og_ind'])
 mod1_inds2plot = np.where(np.isin(mod1_og_inds, og_inds_both))[0]
@@ -68,23 +69,6 @@ tParams_inds2plot = np.where(np.isin(tParams_ndist['og_ind'], og_inds_both))[0]
 assert np.array_equal(mod1_og_inds[mod1_inds2plot], tParams_ndist['og_ind'][tParams_inds2plot])
 assert np.array_equal(mod1_og_inds, mod2_og_inds)
 
-# Binned violin plot
-bins = np.array([-0.7, 0, 0.7])
-mod1_taskout_diff_dig = np.digitize(mod1_taskout_diff[mod1_inds2plot, -1], bins)
-mod2_taskout_diff_dig = np.digitize(mod2_taskout_diff[mod1_inds2plot, -1], bins)
-assert np.array_equal(np.unique(mod1_taskout_diff_dig), np.unique(mod2_taskout_diff_dig))
-n_bins = np.unique(mod1_taskout_diff_dig).shape[0]
-
-f, ax = plt.subplots(2, 1, figsize=(5, 10), sharex=True, sharey=True)
-for i in range(n_bins):
-    inds1 = np.where(mod1_taskout_diff_dig == i)[0]
-    ax[0].violinplot(tParams_ndist['nd_task'][tParams_inds2plot[inds1]], 
-                     positions=[i], widths=0.5, showmeans=True, showextrema=False)
-    inds2 = np.where(mod2_taskout_diff_dig == i)[0]
-    ax[1].violinplot(tParams_ndist['nd_task'][tParams_inds2plot[inds2]], 
-                     positions=[i], widths=0.5, showmeans=True, showextrema=False)
-
-# %% More plots
 # Histogram of monkey neuronal task belief
 plt.figure()
 plt.hist(tParams_ndist['nd_task'][tParams_inds2plot], bins=50, density=True)
@@ -100,3 +84,29 @@ ax[1].scatter(mod2_taskout_diff[mod1_inds2plot, -1], tParams_ndist['nd_task'][tP
 ax[0].set(xlabel=f'{mod1_name} task output difference (SL - SF)', 
           ylabel='Monkey normalized neuronal task belief')
 ax[1].set(xlabel=f'{mod2_name} task output difference (SL - SF)')
+plt.tight_layout()
+
+# Binned violin plot
+bins = np.array([-0.8, -0.4, 0, 0.4, 0.8])
+mod1_taskout_diff_dig = np.digitize(mod1_taskout_diff[mod1_inds2plot, -1], bins)
+mod2_taskout_diff_dig = np.digitize(mod2_taskout_diff[mod1_inds2plot, -1], bins)
+assert np.array_equal(np.unique(mod1_taskout_diff_dig), np.unique(mod2_taskout_diff_dig))
+n_bins = np.unique(mod1_taskout_diff_dig).shape[0]
+
+f, ax = plt.subplots(2, 1, figsize=(5, 10), sharex=True, sharey=True)
+for i in range(n_bins):
+    inds1 = np.where(mod1_taskout_diff_dig == i)[0]
+    ax[0].violinplot(tParams_ndist['nd_task'][tParams_inds2plot[inds1]], 
+                     positions=[i], widths=0.5, showmeans=True, showextrema=False)
+    inds2 = np.where(mod2_taskout_diff_dig == i)[0]
+    ax[1].violinplot(tParams_ndist['nd_task'][tParams_inds2plot[inds2]], 
+                     positions=[i], widths=0.5, showmeans=True, showextrema=False)
+ax[0].set(xlabel=f'{mod1_name} task output difference (SL - SF)',
+          ylabel='Monkey normalized neuronal task belief')
+ax[1].set_xlabel(f'{mod2_name} task output difference (SL - SF)')
+ax[1].set_xticks(range(n_bins), [f'< {bins[0]}'] + [f'[{bins[i-1]}, {bins[i]})' \
+                    for i in range(1, bins.shape[0])] + [f'>= {bins[-1]}'], rotation=30)
+plt.ylim(-4, 4)
+plt.tight_layout()
+
+# %%

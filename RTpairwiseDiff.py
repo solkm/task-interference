@@ -31,9 +31,6 @@ test_inds2 = np.array([trial_params2[i]['trial_ind'] for i in range(trial_params
 
 prevErr = np.array([trial_params1[i]['choice'][-2]!=trial_params1[i]['correct'][-2] \
                     for i in range(trial_params1.shape[0])])
-K=10
-aR_inds = np.load(open(f'./data_inds/K{K}trainable_aRinds.npy', 'rb'))
-aNR_inds = np.load(open(f'./data_inds/K{K}trainable_aNRinds.npy', 'rb'))
 
 #%% define and plot boundary
 t0 = 145
