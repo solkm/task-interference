@@ -139,6 +139,6 @@ for i in range(2):
 
 plt.tight_layout()
 
-fig_folder = '/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject/Figures'
+fig_folder = '/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject/Figures/'
 plt.savefig(fig_folder + f'{mod1_name}v{mod2_name}_SLSFpercoutdiff_LRcoeff.png', dpi=300)
 # %%
