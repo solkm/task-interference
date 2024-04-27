@@ -105,7 +105,7 @@ colors = ['m', 'c']
 xticklabels = ['intercept', '$\Delta L$', '$\Delta F$', '$TB$', 
                '$\Delta L x \Delta F$', '$\Delta L x TB$', 
                '$\Delta F x TB$']
-f, ax = plt.subplots(2, 2, figsize=(10, 10))
+f, ax = plt.subplots(2, 2, figsize=(10, 10), sharex=True, sharey=True)
 
 # SL
 ax[0,0].bar(np.arange(n_params), model_mod1SL.params, 
@@ -137,5 +137,8 @@ for i in range(2):
         ax[i,j].set_xticks(np.arange(n_params), xticklabels, rotation=45)
         ax[i,j].legend()
 
-plt.savefig(f'./{mod1_name}v{mod2_name}_SLSFpercoutdiff_LRcoeff.png', dpi=300)
+plt.tight_layout()
+
+fig_folder = '/Users/Sol/Desktop/CohenLab/DynamicTaskPerceptionProject/Figures'
+plt.savefig(fig_folder + f'{mod1_name}v{mod2_name}_SLSFpercoutdiff_LRcoeff.png', dpi=300)
 # %%
