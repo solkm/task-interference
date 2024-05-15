@@ -6,7 +6,8 @@ from self_history import Task_SH2
 from psychrnn.backend.simulation import BasicSimulator
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-from matplotlib import colormaps as cm
+import matplotlib.cm as cm
+from matplotlib.colors import Normalize
 from model_behavior_functions import get_tasks
 
 #%% Functions to generate test inputs
@@ -50,8 +51,9 @@ N_rec = 200
 
 # Load the model and monkey trial history params
 name, testname, folder = \
-    'SH2_correctA', 'monkeyhist_alltestinds_noisevis0.8mem0.5rec0.1', 'correct_choice_model'
-    #'MM1_monkeyB1245', 'alltestinds_noisevis0.8mem0.5rec0.1', 'monkey_choice_model'
+    'MM1_monkeyB1245', 'alltestinds_noisevis0.8mem0.5rec0.1', 'monkey_choice_model'
+    #'SH2_correctA', 'monkeyhist_alltestinds_noisevis0.8mem0.5rec0.1', 'correct_choice_model'
+    #
     
 weights_path = f'./{folder}/weights/{name}.npz'
 loaded_tparams = pickle.load(open(f'./{folder}/test_data/{name}_{testname}_trialparams.pickle', 'rb'))
@@ -83,16 +85,17 @@ plt.hist(taskoutdiff[a1NR], bins=20, alpha=0.5, label='a1NR')
 plt.hist(taskoutdiff[a2NR], bins=20, alpha=0.5, label='a2NR')
 plt.legend()
 
-#%% Randomly select multiple trials for visualization
-N_per_cond = 10
+#%% Define test inputs for long delay 1, reward hist conditions
+
+N_per_cond = 20
 np.random.seed(2152)
 loaded_inds = np.concatenate((
-    np.random.choice(np.intersect1d(a2NR, SL_inds), N_per_cond, replace=False), 
-    np.random.choice(np.intersect1d(a2NR, SF_inds), N_per_cond, replace=False),
-    np.random.choice(np.intersect1d(a2R, SL_inds), N_per_cond, replace=False),
-    np.random.choice(np.intersect1d(a2R, SF_inds), N_per_cond, replace=False)
+    np.random.choice(a2NR, N_per_cond, replace=False), 
+    np.random.choice(a2R, N_per_cond, replace=False),
+    np.random.choice(a1NR, N_per_cond, replace=False),
+    np.random.choice(a1R, N_per_cond, replace=False)
     ))
-#%% Define test inputs for long delay 1, reward hist conditions
+
 tparams = []
 colors = []
 for i, ind in  enumerate(loaded_inds):
@@ -103,18 +106,20 @@ for i, ind in  enumerate(loaded_inds):
     tparams[i]['dsl'] = loaded_tparams[ind]['dsl']
     tparams[i]['dsf'] = loaded_tparams[ind]['dsf']
 
-    if i//N_per_cond == 0:
-        colors.append(cm['Reds'](0.5))
-    elif i//N_per_cond == 1:
-        colors.append(cm['Purples'](0.5))
-    elif i//N_per_cond == 2:
-        colors.append(cm['Blues'](0.5))
-    elif i//N_per_cond == 3:
-        colors.append(cm['Greens'](0.5))
-
-test_inputs = get_test_inputs_longdelay1(tparams, delay_dur=400)
+dur = 400
+test_inputs = get_test_inputs_longdelay1(tparams, delay_dur=dur)
 
 #%% Define test inputs for long delay 2, reward hist x stim1 conditions
+
+N_per_cond = 10
+np.random.seed(2152)
+loaded_inds = np.concatenate((
+    np.random.choice(np.intersect1d(a2NR, SL_inds), N_per_cond, replace=False), 
+    np.random.choice(np.intersect1d(a2NR, SF_inds), N_per_cond, replace=False),
+    np.random.choice(np.intersect1d(a2R, SL_inds), N_per_cond, replace=False),
+    np.random.choice(np.intersect1d(a2R, SF_inds), N_per_cond, replace=False)
+    ))
+
 stim1s = [(2.5, 2.3), (2.5, 2.7), (2.3, 2.5), (2.7, 2.5)] # (SL, SF)
 cm_dict = {'a2NR_SL':cm['Reds'], 'a2NR_SF':cm['Purples'], 'a2R_SL':cm['Blues'], 'a2R_SF':cm['Greens']}
 colors = []
@@ -152,6 +157,7 @@ for i, ind in  enumerate(loaded_inds):
 test_inputs = get_test_inputs_longdelay2(tparams, delay_dur=300)
 
 #%% Run the simulation
+
 N_batch = len(tparams)
 task = Task_SH2(vis_noise=vis_noise, mem_noise=mem_noise, N_batch=N_batch, K=K)
 network_params = task.get_task_params()
@@ -161,6 +167,11 @@ network_params['rec_noise'] = rec_noise
 
 simulator = BasicSimulator(weights_path=weights_path, params=network_params)
 model_output, state_var = simulator.run_trials(test_inputs)
+
+# %% Color by task output difference
+
+taskoutdiff_longdelay = model_output[:, -1, 0] - model_output[:, -1, 1] # SL - SF
+colors_taskoutdiff = cm.coolwarm((taskoutdiff_longdelay + 1)/2)
 
 # %% PCA for visualization
 
@@ -172,11 +183,12 @@ print(pca.explained_variance_ratio_)
 X = state_var @ pca.components_.T
 
 #%% 3D plot
+
 #%matplotlib widget
 fig = plt.figure(figsize=(8, 8))
 ax = fig.add_subplot(111, projection='3d')
 for i in range(N_batch):
-    c = colors[i]
+    c = colors_taskoutdiff[i]
     ax.plot(X[i, 70:, 0], X[i, 70:, 1], X[i, 70:, 2], color=c, zorder=0)
     '''
     ax.scatter(X[i, 69, 0], X[i, 69, 1], X[i, 69, 2], marker='v', edgecolor='k',
@@ -188,11 +200,18 @@ for i in range(N_batch):
                color=c, s=50, alpha=1, zorder=1)
     
 # %%2D plot 
-fig = plt.figure(figsize=(8, 8))
-ax = fig.add_subplot(111)
+
+fig, ax = plt.subplots(figsize=(8, 8))
 for i in range(N_batch):
-    c = colors[i]
-    ax.plot(X[i, :, 0], X[i, :, 1], color=c, zorder=0)
-    ax.scatter(X[i, -1, 0], X[i, -1, 1], marker='X', edgecolor='k', 
-               color=c, s=50, alpha=1, zorder=1)
+    c = colors_taskoutdiff[i]
+    ax.plot(X[i, :, 0], X[i, :, 1], color=c, zorder=0, alpha=0.2)
+    ax.scatter(X[i, -1, 0], X[i, -1, 1], marker='X', edgecolor='k', lw=0.4,
+               color=c, s=80, alpha=1, zorder=1)
+ax.set_aspect('equal')
+ax.set(xlabel='PC1', ylabel='PC2')
+cbar = plt.colorbar(cm.ScalarMappable(cmap=cm.coolwarm, norm=Normalize(-1, 1)), 
+                    ax=ax, fraction=0.03, label='Task output difference (L - F)')
+cbar.set_ticks([-1, -0.5, 0, 0.5, 1])
+
+#plt.savefig(f'./contraction_figs/{name}_delay1dur{dur}_tPCAlast.png', dpi=300)
 # %%
