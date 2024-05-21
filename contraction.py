@@ -10,8 +10,8 @@ import matplotlib.cm as cm
 from matplotlib import rcParams
 from matplotlib.colors import Normalize
 from model_behavior_functions import get_tasks
-from scipy.linalg import solve_continuous_lyapunov as lyap
-from scipy.linalg import cholesky
+import scipy.linalg
+import itertools
 
 #%% Functions to generate test inputs, and others
 
@@ -49,13 +49,12 @@ def get_test_inputs_longdelay2(tparams, delay_dur=500):
 
     return x_t
 
-def get_jacobian_relu(x, W_rec, network_params):
+def get_jacobian_relu(x, W_rec, network_params, returnF=False):
     """
     x: state vector at time t
     """
     tau = network_params['tau']
     N = x.shape[0]
-    J = np.zeros((N, N))
     F = np.zeros((N, N))
     for i in range(N):
         if x[i] >= 0:
@@ -64,6 +63,8 @@ def get_jacobian_relu(x, W_rec, network_params):
             F[i, i] = 0
     J = 1/tau * (- np.eye(N) + W_rec @ F)
     
+    if returnF:
+        return J, F
     return J
 
 def xdot(x, W_rec, W_in, u, b, network_params):
@@ -75,6 +76,25 @@ def xdot(x, W_rec, W_in, u, b, network_params):
     xdot = 1/tau * (-x + W_rec @ np.maximum(0, x) + W_in @ u + b)
     
     return xdot
+
+def get_jacobian_relu_discrete(x, W_rec, network_params, returnF=False):
+    """
+    x: state vector at timestep t
+    """
+    alpha = network_params['alpha']
+    N = x.shape[0]
+    F = np.zeros((N, N))
+    for i in range(N):
+        if x[i] >= 0:
+            F[i, i] = 1
+        else:
+            F[i, i] = 0
+    J = (1 - alpha) * np.eye(N) + alpha * W_rec @ F
+    
+    if returnF:
+        return J, F
+    return J
+
 
 #%% Load model weights and existing test data
 N_rec = 200
@@ -134,7 +154,7 @@ for i, ind in  enumerate(loaded_inds):
     tparams[i]['dsf'] = loaded_tparams[ind]['dsf']
 
 delaylabel = 'delay1'
-dur = 400
+dur = 300
 test_inputs = get_test_inputs_longdelay1(tparams, delay_dur=dur)
 
 #%% Define test inputs for long delay 2, reward hist x stim1 conditions
@@ -230,7 +250,7 @@ plt.tight_layout()
 np.random.seed(2152)
 diff_dig = np.digitize(taskoutdiff_longdelay, [-1, -0.8, -0.4, -0.2, 0.2, 0.4, 0.8, 1])
 toplot = [np.random.choice(np.intersect1d(np.where(diff_dig==i)[0], 
-            np.arange(0, diff_dig.shape[0], len(stim1s)))) for i in [1, 3, 5, 7]] #[1, 3, 5, 7] 
+            np.arange(0, diff_dig.shape[0], len(stim1s)))) for i in [1, 3]] #[1, 3, 5, 7] 
 print(taskoutdiff_longdelay[toplot])
 
 # PCA on the trials defined by this subset
@@ -274,7 +294,7 @@ for i, ind in enumerate(toplot):
         ax.scatter(X[ind+j, -1, 0], X[ind+j, -1, 1], marker='X', edgecolor='k', 
                    lw=0.2, color=c1, s=80, alpha=1, zorder=1)
  
-ax.set_aspect('equal')
+#ax.set_aspect('equal')
 ax.set(xlabel='PC1', ylabel='PC2')
 cbar = plt.colorbar(cm.ScalarMappable(cmap=cm.plasma, norm=Normalize(2, 3)), 
                     ax=ax, fraction=0.02, label='Stimulus feature')
@@ -317,32 +337,66 @@ for i, ind in enumerate(toplot):
                     marker='X', edgecolor='k', lw=0.4, color='grey', s=40, alpha=1, zorder=2)
 
 
-#%% Contraction? Single context condition example
+#%% Convergence after stim1? Single context condition example
 
-ind0 = 95
+ind0 = toplot[0]
 print(taskoutdiff_longdelay[ind0])
-x1 = state_var[ind0, :, :]
-x2 = state_var[ind0 + 1, :, :]
-delta_x_rel = np.sqrt(np.sum(np.square(x2 - x1), axis=1))
+rel = 'L' if taskoutdiff_longdelay[ind0] > 0 else 'F'
+rel_ind = 0 if rel=='L' else 1
 
-x1 = state_var[ind0 + 2, :, :]
-x2 = state_var[ind0 + 3, :, :]
-delta_x_irrel = np.sqrt(np.sum(np.square(x2 - x1), axis=1))
+stim_pair_inds = list(itertools.combinations(np.arange(len(stim1s)), 2))
+stim_pair_diffs = []
+colormaps = [cm.viridis, cm.viridis] # rel diff, irrel diff
+tmax = 250
+fig, ax = plt.subplots(1, 2, figsize=(8, 4), sharex=True, sharey=True)
 
-plt.figure()
-plt.plot(np.arange(delta_x_rel.shape[0]), delta_x_rel, label='rel')
-plt.plot(np.arange(delta_x_irrel.shape[0]), delta_x_irrel, label='irrel')
-plt.vlines(70, 0, 8, 'grey', '--')
-plt.legend()
+for i in range(len(stim_pair_inds)):
+    diff = np.round(np.abs(np.array(stim1s[stim_pair_inds[i][0]]) \
+                           - np.array(stim1s[stim_pair_inds[i][1]])), 1)
+    stim_pair_diffs.append(diff)
+
+    if np.all(diff != 0):
+        c_rel = colormaps[0](diff[rel_ind])
+        c_irrel = colormaps[1](diff[1-rel_ind])
+    else:
+        if diff[rel_ind] != 0:
+            c_rel = colormaps[0](diff[rel_ind])
+            c_irrel = colormaps[1](0)
+        else:
+            c_rel = colormaps[0](0)
+            c_irrel = colormaps[1](diff[1-rel_ind])
+    
+    x1 = state_var[ind0 + stim_pair_inds[i][0], :tmax, :]
+    x2 = state_var[ind0 + stim_pair_inds[i][1], :tmax, :]
+    delta_x = np.sqrt(np.sum(np.square(x2 - x1), axis=1))
+
+    ax[0].plot(np.arange(delta_x.shape[0]), delta_x, color=c_rel)
+    ax[1].plot(np.arange(delta_x.shape[0]), delta_x, color=c_irrel)
+
+ax[0].axvspan(51, 70, color='orange', alpha=0.3)
+ax[0].set(xlabel='Timesteps', ylabel='Distance between trajectories')
+ax[1].axvspan(51, 70, color='orange', alpha=0.3)
+
+cbar0 = plt.colorbar(cm.ScalarMappable(cmap=colormaps[0]), 
+                    ax=ax[0], fraction=0.05, label='$|\Delta f_{Rel}|$')
+cbar0.set_ticks([0, 0.4, 0.8])
+cbar1 = plt.colorbar(cm.ScalarMappable(cmap=colormaps[1]),
+                    ax=ax[1], fraction=0.05, label='$|\Delta f_{Irrel}|$')
+cbar1.set_ticks([0, 0.4, 0.8])
+plt.tight_layout()
+tod3 = np.round(taskoutdiff_longdelay[ind0], 3)
+#plt.savefig(f'./contraction_figs/{name}_{delaylabel}_distbetweentrajs_{tod3}.png', dpi=300)
 
 # %% Compute matrix measures for Jacobians J for all trials vs time
 
-max_Re_eigvals = np.zeros((state_var.shape[0], state_var.shape[1]))
-lognorm2 = np.zeros((state_var.shape[0], state_var.shape[1]))
-lognorm1 = np.zeros((state_var.shape[0], state_var.shape[1]))
+tmax = 300
+max_Re_eigvals = np.zeros((state_var.shape[0], tmax))
+lognorm2 = np.zeros((state_var.shape[0], tmax))
+lognorm1 = np.zeros((state_var.shape[0], tmax))
 
 for tr in range(state_var.shape[0]):
-    for t in range(state_var.shape[1]):
+    print(tr)
+    for t in range(tmax):
         J = get_jacobian_relu(state_var[tr, t, :], simulator.W_rec, network_params)
         max_Re_eigvals[tr, t] = np.max(np.real(np.linalg.eigvals(J)))
         lognorm2[tr, t] = np.max(np.linalg.eigvals((J + J.T)/2))
@@ -351,21 +405,22 @@ for tr in range(state_var.shape[0]):
 # %% Plot matrix measures
 rcParams['font.size'] = 14
 fig, ax = plt.subplots(1, 3, figsize=(13, 4), sharex=True)
-tmax = 250
+tmax = 300
 time = np.arange(tmax)
-alpha = 0.6
+alpha = 0.4
+lw = 0.5
 for i in range(max_Re_eigvals.shape[0]):
     ax[0].plot(time, max_Re_eigvals[i, :tmax], 
-            color=colors_taskoutdiff[i], alpha=alpha)
+            color=colors_taskoutdiff[i], alpha=alpha, lw=lw)
     ax[1].plot(time, lognorm2[i, :tmax],
-            color=colors_taskoutdiff[i], alpha=alpha)
+            color=colors_taskoutdiff[i], alpha=alpha, lw=lw)
     ax[2].plot(time, lognorm1[i, :tmax],
-            color=colors_taskoutdiff[i], alpha=alpha)
+            color=colors_taskoutdiff[i], alpha=alpha, lw=lw)
 
 ax[0].set(xlabel='Timesteps')
 ax[0].set(ylabel='$max(Re[\lambda(\ J\ )])$', yticks=[-0.008, -0.004, 0])
-ax[1].set(ylabel='$\mu_2(\ J\ )$', yticks=[0.009, 0.011, 0.013])
-ax[2].set(ylabel='$\mu_1(\ J\ )$', yticks=[0.04, 0.06, 0.08, 0.1])
+ax[1].set(ylabel='$\mu_2(\ J\ )$', ) #yticks=[0.01, 0.015, 0.02]) #
+ax[2].set(ylabel='$\mu_1(\ J\ )$', yticks=[0.04, 0.06, 0.08, 0.1]) #yticks=[0.06, 0.08, 0.1, .12]) #
 
 plt.tight_layout()
 #plt.savefig(f'./contraction_figs/{name}_{delaylabel}_Jmetrics.png', dpi=300)
@@ -374,68 +429,38 @@ plt.tight_layout()
 
 rcParams['font.size'] = 14
 fig, ax = plt.subplots(1, 2, figsize=(9, 4), sharex=True)
-
+lw = 0.5
+alpha = 0.4
 for i in range(state_var.shape[0]):
     x_last = state_var[i, -1, :]
     distance_from_last = np.sqrt(np.sum(np.square(state_var[i, :, :] - x_last), axis=1))
-    ax[0].plot(distance_from_last, color=colors_taskoutdiff[i], alpha=0.6)
+    ax[0].plot(distance_from_last, color=colors_taskoutdiff[i], alpha=alpha, lw=lw)
 
 ax[0].set(xlabel='Timesteps', ylabel='Distance from last state',
-       xticks=np.arange(0, 251, 100), yticks=np.arange(0, 21, 10), xlim=(-5, 205))
+       xticks=np.arange(0, tmax + 1, 100), yticks=np.arange(0, 21, 10), xlim=(-5, tmax + 5))
 
 for i in range(state_var.shape[0]):
     xdot_i = np.zeros((state_var.shape[1], state_var.shape[2]))
     for t in range(state_var.shape[1]):
         xdot_i[t] = xdot(state_var[i, t, :], simulator.W_rec, simulator.W_in, test_inputs[i, t, :], simulator.b_rec, network_params)
-    ax[1].plot(np.linalg.norm(xdot_i, axis=1), color=colors_taskoutdiff[i], alpha=0.6)
+    ax[1].plot(np.linalg.norm(xdot_i, axis=1), color=colors_taskoutdiff[i], alpha=alpha, lw=lw)
 
 ax[1].set(xlabel='Timesteps', ylabel='$||\dot{x}||$', yticks=[0, 0.05, 0.1, 0.15])
 plt.tight_layout()
 #plt.savefig(f'./contraction_figs/{name}_{delaylabel}_distfromlast_xdot.png', dpi=300)
 
-# %% Find metrics for contraction: Single trial example
-# NOT YET WORKING
+# %% Try metrics for contraction: Single trial example
 
-def solve_for_M0(x0, W_rec, network_params, rate):
+# Doesn't work
 
-    J = get_jacobian_relu(x0, W_rec, network_params)
+i = 0
+x0 = state_var[0, 0, :]
+J0, F0 = get_jacobian_relu(x0, simulator.W_rec, network_params, returnF=True)
+rate = 0.0001
 
-    n = J.shape[0]
-    A_lyap = J.T + (rate * np.eye(n))
-    Q = -np.eye(n) * 1e-6
-    M = lyap(A_lyap, Q)
-
-    try:
-        Theta = cholesky(M).T
-    except np.linalg.LinAlgError as e:
-        print(f"Cholesky decomposition failed: {e}")
-        return None
-
-    M_new = Theta.T @ Theta
-
-    return M_new, Theta
-
-trial_ind = 0
-tmax = 250
-x_t = state_var[trial_ind, :, :]
-x_last = x_t[-1, :]
-rate = .5
-print(rate)
-M0, Theta0 = solve_for_M0(x_last, simulator.W_rec, network_params, rate)
-
-print(np.max(np.linalg.eigvals((M0 + M0.T)/2)))
-
-lognorm2s = np.zeros(tmax)
-for t in range(tmax):
-    J = get_jacobian_relu(x_t[t, :], simulator.W_rec, network_params)
-    matrix = J.T @ M0 + M0 @ J + 2 * rate * M0
-    lognorm2s[t] = np.max(np.linalg.eigvals((matrix + matrix.T)/2))
-
-plt.figure()
-plt.plot(lognorm2s)
-
-plt.figure()
-plt.imshow(M0)
-plt.colorbar()
+Theta_guess = scipy.linalg.sqrtm(F0) @ np.diag(np.random.uniform(-1, 1, F0.shape[0]))
+M0 = Theta_guess.T @ Theta_guess
+matrix = matrix = J.T @ M0 + M0 @ J + 2 * rate * M0
+print(np.max(np.linalg.eigvals((matrix + matrix.T)/2)))
 
 # %%
