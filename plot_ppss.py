@@ -15,7 +15,7 @@ import scipy.stats as st
 
 #%% side-by-side plot, two models
 
-dataset = 'allinds' # 'allinds' or 'forppss'
+dataset = 'allinds' # 'allinds' or 'ppss'
 
 name1 = 'MM1_monkeyB1245'
 folder1 = 'monkey_choice_model/test_data'
@@ -25,9 +25,9 @@ folder2 = 'correct_choice_model/test_data'
 if dataset == 'allinds':
     data_path1 = f'./{folder1}/{name1}_allinds_noisevis0.8mem0.5rec0.1'
     data_path2 = f'./{folder2}/{name2}_monkeyhist_allinds_noisevis0.8mem0.5rec0.1'
-elif dataset == 'forppss':
-    data_path1 = f'./{folder1}/{name1}_forppss_changeboth196condsN40ff[2.1, 2.3, 2.5, 2.7, 2.9]_noisevis0.8mem0.5rec0.1'
-    data_path2 = f'./{folder2}/{name2}_forppss_changeboth196condsN40ff[2.1, 2.3, 2.5, 2.7, 2.9]_noisevis0.8mem0.5rec0.1'
+elif dataset == 'ppss':
+    data_path1 = f'./{folder1}/{name1}_ppssN40ff[2.1, 2.3, 2.5, 2.7, 2.9]_noisevis0.8mem0.5rec0.1'
+    data_path2 = f'./{folder2}/{name2}_ppssN40ff[2.1, 2.3, 2.5, 2.7, 2.9]_noisevis0.8mem0.5rec0.1'
 
 data_paths_ = [data_path1, data_path2]
 names_ = [name1, name2]
@@ -55,15 +55,13 @@ for i in range(len(data_paths_)):
     if dataset == 'allinds':
         model_output = pickle.load(open(data_path + '_modeloutput.pickle', 'rb'))
         model_choices = np.argmax(model_output[:, -1, 2:6], axis=1) + 1
-    elif dataset == 'forppss':
+    elif dataset == 'ppss':
         model_choices = pickle.load(open(data_path + '_modelchoices.pickle', 'rb'))
 
     assert model_choices.shape[0] >= 10000, 'test set is too small'
     SL_perf_aR,  SL_perf_aNR, SF_perf_aR, SF_perf_aNR, SL_conds, SF_conds = \
         mf.perc_perf_same_stim(model_choices, trial_params, n_acc=n_acc, 
                         stim_cond=stim_cond, one_acc_per_cond=one_acc_per_cond)
-    
-    perf_aR, perf_aNR = mf.get_perc_acc_afterRvsNR(model_choices, trial_params)
 
     # stats
     stat_SL, p_SL = st.wilcoxon(SL_perf_aR, SL_perf_aNR) # Wilcoxon signed-rank test
@@ -71,8 +69,7 @@ for i in range(len(data_paths_)):
 
     ppss_dicts.append({'SL_perf_aR': SL_perf_aR, 'SL_perf_aNR': SL_perf_aNR,
                         'SF_perf_aR': SF_perf_aR, 'SF_perf_aNR': SF_perf_aNR,
-                        'SL_conds': SL_conds, 'SF_conds': SF_conds,
-                        'perf_aR': perf_aR, 'perf_aNR': perf_aNR})
+                        'SL_conds': SL_conds, 'SF_conds': SF_conds})
 
     # plot
     if plot:
@@ -95,9 +92,6 @@ for i in range(len(data_paths_)):
 
     print(names_[i] + ' perceptual performance')
     print(stim_cond, ', n_acc =', n_acc, ', one_acc_per_cond =', one_acc_per_cond)
-    print('across all conditions, after R vs after NR', 
-          np.round(perf_aR, 3), np.round(perf_aNR, 3))
-    print('difference: ', np.round(perf_aR - perf_aNR, 3))
     print('SL mean, after R vs after NR', 
           np.round(np.mean(SL_perf_aR), 3), np.round(np.mean(SL_perf_aNR), 3))
     print('SF mean, after R vs after NR', 

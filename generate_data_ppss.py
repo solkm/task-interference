@@ -86,7 +86,7 @@ task = Task_SH2(vis_noise=vis_noise, mem_noise=mem_noise, N_batch=2*N,
 model_choices_all, trial_params_all = generate_data(dSLs, dSFs, task, weights_path, N, ff=ff)
 
 #%% Save as .pickle
-savename = f'./{folder}/test_data/{name}_forppss_changeboth196condsN{N}ff{ff}_noisevis{vis_noise}mem{mem_noise}rec{rec_noise}'
+savename = f'./{folder}/test_data/{name}_ppssN{N}ff{ff}_noisevis{vis_noise}mem{mem_noise}rec{rec_noise}'
 
 savefile = open(savename+'_modelchoices.pickle','wb')
 pickle.dump(model_choices_all, savefile, protocol=4)
